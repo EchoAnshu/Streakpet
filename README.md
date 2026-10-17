@@ -1,47 +1,71 @@
-# Svelte + TS + Vite
+# StreakPet
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+A lightweight, offline-first habit tracker with a virtual pet, built as a Progressive Web App (PWA). One codebase runs on phones and laptops.
 
-## Recommended IDE Setup
+## Features (MVP target)
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- Create, edit, and archive habits with daily or selected-weekday schedules.
+- Complete habits once per local calendar day, with undo.
+- Current and longest streaks (later phase).
+- A virtual pet that earns XP and evolves with consistent completions (later phase).
+- Local-only data storage using IndexedDB. No account, backend, or network connection required for core features.
 
-## Need an official Svelte framework?
+## Tech stack
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+| Technology       | Purpose                                  |
+| ---------------- | ---------------------------------------- |
+| Svelte 5         | UI components                            |
+| TypeScript       | Type safety and application logic        |
+| Vite             | Dev server and production build          |
+| IndexedDB        | Local persistence                        |
+| vite-plugin-pwa  | PWA manifest and offline caching         |
+| CSS / SVG        | Responsive styling and pet graphics      |
 
-## Technical considerations
+## Getting started
 
-**Why use this over SvelteKit?**
-
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+```bash
+npm install
+npm run dev
 ```
+
+Open the local URL printed in the terminal. Other scripts:
+
+```bash
+npm run check    # svelte-check + TypeScript
+npm run build    # production build
+npm run preview  # preview the production build
+```
+
+## Project structure
+
+```text
+src/
+├── components/   reusable UI components
+├── views/        Today, History, and Settings screens
+├── domain/       date, schedule, and habit rules
+├── data/         IndexedDB setup and repositories
+├── stores/       reactive application state
+├── styles/       global CSS and design tokens
+├── types/        shared TypeScript models
+├── App.svelte
+└── main.ts
+```
+
+## Development roadmap
+
+| Phase | Focus                              |
+| ----- | ---------------------------------- |
+| 0     | Project foundation                 |
+| 1     | UI foundation                      |
+| 2     | Habit management                   |
+| 3     | IndexedDB persistence              |
+| 4     | Completion and undo                |
+| 5     | Streak engine                      |
+| 6     | Pet and XP progression             |
+| 7     | History                            |
+| 8     | PWA and offline verification       |
+| 9     | Final testing and release          |
+
+## Data and privacy
+
+Habits and completion records are stored only in the current browser profile using IndexedDB. Data is not synchronized between devices, and clearing browser site data removes it.
