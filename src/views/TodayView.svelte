@@ -5,16 +5,33 @@
   import HabitItem from '../components/HabitItem.svelte'
   import PetPanel from '../components/PetPanel.svelte'
   import ProgressSummary from '../components/ProgressSummary.svelte'
+  import { getLocalDateKey } from '../domain/dates'
   import { isScheduledForDate, type HabitInput } from '../domain/habits'
+  import * as completionsStore from '../stores/completions.svelte'
   import * as habitsStore from '../stores/habits.svelte'
 
   const today = new Date()
+  const todayKey = getLocalDateKey(today)
 
   let editing = $state<Habit | null | undefined>(undefined)
   let actionError = $state<string | null>(null)
+  let togglingIds = $state<string[]>([])
 
   let active = $derived(habitsStore.activeHabits())
   let scheduledToday = $derived(active.filter((habit) => isScheduledForDate(habit, today)))
+  let completedToday = $derived(
+    completionsStore.completedCountFor(
+      todayKey,
+      scheduledToday.map((habit) => habit.id)
+    )
+  )
+  let loadError = $derived(habitsStore.getLoadError() ?? completionsStore.getLoadError())
+  let loading = $derived(habitsStore.isLoading() || completionsStore.isLoading())
+
+  function retryLoad() {
+    habitsStore.loadHabits(true)
+    completionsStore.loadCompletions(true)
+  }
 
   function startAdd() {
     actionError = null
@@ -49,26 +66,33 @@
       actionError = error instanceof Error ? error.message : 'Could not archive the habit.'
     }
   }
+
+  async function handleToggleComplete(habit: Habit) {
+    if (togglingIds.includes(habit.id)) return
+    togglingIds = [...togglingIds, habit.id]
+    actionError = null
+    try {
+      await completionsStore.toggleCompletion(habit.id, todayKey)
+    } catch (error) {
+      actionError = error instanceof Error ? error.message : 'Could not update the completion.'
+    } finally {
+      togglingIds = togglingIds.filter((id) => id !== habit.id)
+    }
+  }
 </script>
 
 <div class="today-view">
   <PetPanel />
 
-  {#if habitsStore.isLoading()}
+  {#if loading}
     <p class="today-view__status">Loading your habits…</p>
-  {:else if habitsStore.getLoadError()}
+  {:else if loadError}
     <div class="today-view__error card" role="alert">
-      <p>{habitsStore.getLoadError()}</p>
-      <button
-        type="button"
-        class="button button--primary"
-        onclick={() => habitsStore.loadHabits(true)}
-      >
-        Try again
-      </button>
+      <p>{loadError}</p>
+      <button type="button" class="button button--primary" onclick={retryLoad}>Try again</button>
     </div>
   {:else}
-    <ProgressSummary completed={0} total={scheduledToday.length} />
+    <ProgressSummary completed={completedToday} total={scheduledToday.length} />
 
     {#if active.length === 0}
       <EmptyState
@@ -89,9 +113,9 @@
         {#each scheduledToday as habit (habit.id)}
           <HabitItem
             {habit}
-            completed={false}
-            completionEnabled={false}
-            onToggleComplete={() => {}}
+            completed={completionsStore.isCompleted(habit.id, todayKey)}
+            completionEnabled={!togglingIds.includes(habit.id)}
+            onToggleComplete={handleToggleComplete}
             onEdit={startEdit}
             onArchive={handleArchive}
           />

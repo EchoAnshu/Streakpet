@@ -23,7 +23,7 @@
     aria-pressed={completed}
     aria-label={completed ? `Undo completion for ${habit.name}` : `Complete ${habit.name}`}
     disabled={!completionEnabled}
-    title={completionEnabled ? undefined : 'Completion tracking arrives in the next update'}
+    title={completionEnabled ? undefined : 'Saving…'}
     onclick={() => onToggleComplete(habit)}
   >
     {#if completed}

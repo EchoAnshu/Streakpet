@@ -5,7 +5,7 @@
 <div class="history-view">
   <EmptyState
     title="No history yet"
-    message="Once you complete habits, your progress will appear here."
+    message="A detailed history view arrives in a later update. Your completed habits are already saved on this device."
   />
 </div>
 

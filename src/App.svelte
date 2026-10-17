@@ -4,11 +4,13 @@
   import HistoryView from './views/HistoryView.svelte'
   import SettingsView from './views/SettingsView.svelte'
   import TodayView from './views/TodayView.svelte'
+  import { loadCompletions } from './stores/completions.svelte'
   import { loadHabits } from './stores/habits.svelte'
 
   let view = $state<ViewId>('today')
 
   loadHabits()
+  loadCompletions()
 </script>
 
 <div class="app-shell">
