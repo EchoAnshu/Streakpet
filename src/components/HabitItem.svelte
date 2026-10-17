@@ -6,14 +6,24 @@
     habit: Habit
     completed: boolean
     completionEnabled: boolean
+    streak: number
     onToggleComplete: (habit: Habit) => void
     onEdit: (habit: Habit) => void
     onArchive: (habit: Habit) => void
   }
 
-  let { habit, completed, completionEnabled, onToggleComplete, onEdit, onArchive }: Props = $props()
+  let {
+    habit,
+    completed,
+    completionEnabled,
+    streak,
+    onToggleComplete,
+    onEdit,
+    onArchive,
+  }: Props = $props()
 
   let scheduleLabel = $derived(formatSchedule(habit.scheduledDays))
+  let metaLabel = $derived(streak > 0 ? `${scheduleLabel} · ${streak}-day streak` : scheduleLabel)
 </script>
 
 <li class="habit-item" class:habit-item--completed={completed}>
@@ -38,7 +48,7 @@
     {#if habit.description}
       <p class="habit-item__description">{habit.description}</p>
     {/if}
-    <p class="habit-item__schedule">{scheduleLabel}</p>
+    <p class="habit-item__schedule">{metaLabel}</p>
   </div>
 
   <div class="habit-item__actions">

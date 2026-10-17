@@ -14,6 +14,10 @@ export function isLoading(): boolean {
   return loading
 }
 
+export function getCompletions(): Completion[] {
+  return completions
+}
+
 export function getLoadError(): string | null {
   return loadError
 }

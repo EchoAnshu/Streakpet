@@ -7,6 +7,7 @@
   import ProgressSummary from '../components/ProgressSummary.svelte'
   import { getLocalDateKey } from '../domain/dates'
   import { isScheduledForDate, type HabitInput } from '../domain/habits'
+  import { calculateCurrentStreak } from '../domain/streaks'
   import * as completionsStore from '../stores/completions.svelte'
   import * as habitsStore from '../stores/habits.svelte'
 
@@ -115,6 +116,7 @@
             {habit}
             completed={completionsStore.isCompleted(habit.id, todayKey)}
             completionEnabled={!togglingIds.includes(habit.id)}
+            streak={calculateCurrentStreak(habit, completionsStore.getCompletions(), today)}
             onToggleComplete={handleToggleComplete}
             onEdit={startEdit}
             onArchive={handleArchive}
