@@ -1,5 +1,7 @@
-import type { Completion } from '../types/models'
+import type { Completion, Habit } from '../types/models'
 import { addCompletion, deleteCompletion, listCompletions } from '../data/completionRepository'
+import { parseDateKey } from '../domain/dates'
+import { isScheduledForDate } from '../domain/habits'
 
 let completions = $state<Completion[]>([])
 let loading = $state(true)
@@ -49,9 +51,9 @@ export async function loadCompletions(force = false): Promise<void> {
   }
 }
 
-export async function toggleCompletion(habitId: string, dateKey: string): Promise<void> {
+export async function toggleCompletion(habit: Habit, dateKey: string): Promise<void> {
   const existing = completions.find(
-    (completion) => completion.habitId === habitId && completion.date === dateKey
+    (completion) => completion.habitId === habit.id && completion.date === dateKey
   )
 
   if (existing) {
@@ -65,9 +67,13 @@ export async function toggleCompletion(habitId: string, dateKey: string): Promis
     return
   }
 
+  if (!isScheduledForDate(habit, parseDateKey(dateKey))) {
+    throw new Error(`"${habit.name}" is not scheduled on this day.`)
+  }
+
   const completion: Completion = {
     id: crypto.randomUUID(),
-    habitId,
+    habitId: habit.id,
     date: dateKey,
     completedAt: Date.now(),
   }

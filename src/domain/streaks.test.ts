@@ -160,3 +160,40 @@ describe('calculateLongestStreak', () => {
     expect(calculateLongestStreak(habit, [], dateFromKey('2026-10-17'))).toBe(0)
   })
 })
+
+describe('schedule changes', () => {
+  it('uses the current schedule when a daily habit was changed to weekdays only', () => {
+    const habit = makeHabit(WEEKDAYS, '2026-10-01')
+    const completions = makeCompletions(['2026-10-10', '2026-10-11', '2026-10-12'])
+    expect(calculateCurrentStreak(habit, completions, dateFromKey('2026-10-12'))).toBe(1)
+    expect(calculateLongestStreak(habit, completions, dateFromKey('2026-10-12'))).toBe(1)
+  })
+
+  it('ignores weekend completions from an earlier daily schedule', () => {
+    const habit = makeHabit(WEEKDAYS, '2026-10-01')
+    const completions = makeCompletions([
+      '2026-10-12',
+      '2026-10-13',
+      '2026-10-14',
+      '2026-10-15',
+      '2026-10-16',
+      '2026-10-17',
+      '2026-10-18',
+    ])
+    expect(calculateCurrentStreak(habit, completions, dateFromKey('2026-10-19'))).toBe(5)
+  })
+
+  it('counts newly scheduled days after a schedule is expanded', () => {
+    const habit = makeHabit([1, 2], '2026-10-01')
+    const completions = makeCompletions(['2026-10-12', '2026-10-13'])
+    expect(calculateCurrentStreak(habit, completions, dateFromKey('2026-10-13'))).toBe(2)
+    expect(calculateLongestStreak(habit, completions, dateFromKey('2026-10-13'))).toBe(2)
+  })
+
+  it('counts only days that are scheduled under the current schedule', () => {
+    const habit = makeHabit([1, 3], '2026-10-01')
+    const completions = makeCompletions(['2026-10-12', '2026-10-13', '2026-10-14'])
+    expect(calculateCurrentStreak(habit, completions, dateFromKey('2026-10-15'))).toBe(2)
+    expect(calculateLongestStreak(habit, completions, dateFromKey('2026-10-15'))).toBe(2)
+  })
+})

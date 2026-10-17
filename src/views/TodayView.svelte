@@ -73,7 +73,7 @@
     togglingIds = [...togglingIds, habit.id]
     actionError = null
     try {
-      await completionsStore.toggleCompletion(habit.id, todayKey)
+      await completionsStore.toggleCompletion(habit, todayKey)
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not update the completion.'
     } finally {
