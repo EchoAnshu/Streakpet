@@ -1,5 +1,5 @@
 const DB_NAME = 'streakpet-db'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -7,7 +7,7 @@ export function openDatabase(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise
 
   dbPromise = new Promise((resolve, reject) => {
-    if (!('indexedDB' in window)) {
+    if (typeof indexedDB === 'undefined') {
       reject(new Error('IndexedDB is not available in this browser.'))
       return
     }
@@ -27,6 +27,12 @@ export function openDatabase(): Promise<IDBDatabase> {
         completions.createIndex('habitId', 'habitId')
         completions.createIndex('date', 'date')
         completions.createIndex('habitId_date', ['habitId', 'date'], { unique: true })
+      }
+
+      if (!db.objectStoreNames.contains('rewards')) {
+        const rewards = db.createObjectStore('rewards', { keyPath: 'id' })
+        rewards.createIndex('date', 'date')
+        rewards.createIndex('habitId', 'habitId')
       }
     }
 
@@ -49,6 +55,17 @@ export function openDatabase(): Promise<IDBDatabase> {
   })
 
   return dbPromise
+}
+
+export async function closeDatabase(): Promise<void> {
+  if (!dbPromise) return
+  try {
+    const db = await dbPromise
+    db.close()
+  } catch {
+    // The connection never opened; nothing to close.
+  }
+  dbPromise = null
 }
 
 export function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {

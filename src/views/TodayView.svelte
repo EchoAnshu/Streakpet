@@ -8,8 +8,10 @@
   import { getLocalDateKey } from '../domain/dates'
   import { isScheduledForDate, type HabitInput } from '../domain/habits'
   import { calculateCurrentStreak } from '../domain/streaks'
+  import { recalculateDailyBonus } from '../data/completionRepository'
   import * as completionsStore from '../stores/completions.svelte'
   import * as habitsStore from '../stores/habits.svelte'
+  import * as petStore from '../stores/pet.svelte'
 
   const today = new Date()
   const todayKey = getLocalDateKey(today)
@@ -26,12 +28,17 @@
       scheduledToday.map((habit) => habit.id)
     )
   )
-  let loadError = $derived(habitsStore.getLoadError() ?? completionsStore.getLoadError())
-  let loading = $derived(habitsStore.isLoading() || completionsStore.isLoading())
+  let loadError = $derived(
+    habitsStore.getLoadError() ?? completionsStore.getLoadError() ?? petStore.getLoadError()
+  )
+  let loading = $derived(
+    habitsStore.isLoading() || completionsStore.isLoading() || petStore.isLoading()
+  )
 
   function retryLoad() {
     habitsStore.loadHabits(true)
     completionsStore.loadCompletions(true)
+    petStore.loadRewards(true)
   }
 
   function startAdd() {
@@ -63,6 +70,9 @@
     actionError = null
     try {
       await habitsStore.archiveHabit(habit.id)
+      if (isScheduledForDate(habit, today)) {
+        petStore.setRewards(await recalculateDailyBonus(todayKey))
+      }
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not archive the habit.'
     }
@@ -83,7 +93,7 @@
 </script>
 
 <div class="today-view">
-  <PetPanel />
+  <PetPanel totalXp={petStore.getTotalXp()} stage={petStore.getStage()} />
 
   {#if loading}
     <p class="today-view__status">Loading your habits…</p>

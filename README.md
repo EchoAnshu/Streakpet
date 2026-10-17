@@ -6,8 +6,8 @@ A lightweight, offline-first habit tracker with a virtual pet, built as a Progre
 
 - Create, edit, and archive habits with daily or selected-weekday schedules.
 - Complete habits once per local calendar day, with undo.
-- Current and longest streaks (later phase).
-- A virtual pet that earns XP and evolves with consistent completions (later phase).
+- Current and longest streaks.
+- A virtual pet that earns XP and evolves from baby to teen to adult as you complete habits.
 - Local-only data storage using IndexedDB. No account, backend, or network connection required for core features.
 
 ## Tech stack

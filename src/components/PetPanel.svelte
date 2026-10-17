@@ -1,22 +1,31 @@
 <script lang="ts">
+  import {
+    DAILY_BONUS_XP,
+    HABIT_COMPLETION_XP,
+    STAGE_LABELS,
+    stageProgress,
+    type PetStage,
+  } from '../domain/pet'
+
   interface Props {
-    xp?: number
-    xpGoal?: number
+    totalXp: number
+    stage: PetStage
   }
 
-  let { xp = 0, xpGoal = 100 }: Props = $props()
+  let { totalXp, stage }: Props = $props()
 
-  const stageLabel = 'Baby'
-
-  let progressPercent = $derived(xpGoal > 0 ? Math.min(100, Math.round((xp / xpGoal) * 100)) : 0)
+  let progress = $derived(stageProgress(totalXp))
+  let progressPercent = $derived(
+    progress.goal ? Math.min(100, Math.round((progress.earned / progress.goal) * 100)) : 100
+  )
 </script>
 
 <section class="pet-panel card" aria-labelledby="pet-stage">
   <svg
-    class="pet-panel__pet"
+    class="pet-panel__pet pet-panel__pet--{stage}"
     viewBox="0 0 120 120"
     role="img"
-    aria-label="Your pet as a baby"
+    aria-label={`Your pet as a ${STAGE_LABELS[stage].toLowerCase()}`}
     focusable="false"
   >
     <ellipse cx="31" cy="40" rx="11" ry="13" class="pet-ear" />
@@ -30,20 +39,30 @@
   </svg>
 
   <div class="pet-panel__info">
-    <h2 class="pet-panel__stage" id="pet-stage">{stageLabel} stage</h2>
-    <p class="pet-panel__xp">{xp} / {xpGoal} XP</p>
-    <div
-      class="pet-panel__progress"
-      role="progressbar"
-      aria-label="Progress to the next stage"
-      aria-valuemin="0"
-      aria-valuemax={xpGoal}
-      aria-valuenow={xp}
-    >
-      <div class="pet-panel__progress-fill" style={`width: ${progressPercent}%`}></div>
-    </div>
+    <h2 class="pet-panel__stage" id="pet-stage">{STAGE_LABELS[stage]} stage</h2>
+    <p class="pet-panel__xp">{totalXp} XP total</p>
+
+    {#if progress.goal && progress.nextStage}
+      <div
+        class="pet-panel__progress"
+        role="progressbar"
+        aria-label={`Progress to the ${STAGE_LABELS[progress.nextStage].toLowerCase()} stage`}
+        aria-valuemin="0"
+        aria-valuemax={progress.goal}
+        aria-valuenow={progress.earned}
+      >
+        <div class="pet-panel__progress-fill" style={`width: ${progressPercent}%`}></div>
+      </div>
+      <p class="pet-panel__progress-label">
+        {progress.earned} / {progress.goal} XP to {STAGE_LABELS[progress.nextStage]}
+      </p>
+    {:else}
+      <p class="pet-panel__progress-label">Fully grown</p>
+    {/if}
+
     <p class="pet-panel__hint">
-      Completing habits will earn XP. Pet progression arrives in a later update.
+      Each habit completion earns {HABIT_COMPLETION_XP} XP. Complete everything scheduled for a
+      day for a +{DAILY_BONUS_XP} bonus.
     </p>
   </div>
 </section>
@@ -56,9 +75,23 @@
   }
 
   .pet-panel__pet {
+    flex-shrink: 0;
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+
+  .pet-panel__pet--baby {
+    width: 76px;
+    height: 76px;
+  }
+
+  .pet-panel__pet--teen {
     width: 96px;
     height: 96px;
-    flex-shrink: 0;
+  }
+
+  .pet-panel__pet--adult {
+    width: 116px;
+    height: 116px;
   }
 
   .pet-body {
@@ -114,18 +147,18 @@
     height: 100%;
     background: var(--color-primary);
     border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  .pet-panel__progress-label {
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    margin-top: var(--space-1);
   }
 
   .pet-panel__hint {
     color: var(--color-muted);
     font-size: 0.8125rem;
     margin-top: var(--space-2);
-  }
-
-  @media (max-width: 400px) {
-    .pet-panel__pet {
-      width: 72px;
-      height: 72px;
-    }
   }
 </style>
