@@ -19,7 +19,7 @@ export const TEEN_THRESHOLD = 100
 export const ADULT_THRESHOLD = 300
 
 export const HUNGER_MAX = 100
-export const HUNGER_DECAY_PER_DAY = 15
+export const HUNGER_DECAY_PER_DAY = 50
 export const FEED_HUNGER_RESTORE = 20
 export const FEED_XP = 10
 export const FULL_TOLERANCE = 1

@@ -37,7 +37,7 @@ describe('economy constants', () => {
     expect(FEED_XP).toBe(10)
     expect(FULL_TOLERANCE).toBe(1)
     expect(HUNGER_MAX).toBe(100)
-    expect(HUNGER_DECAY_PER_DAY).toBe(15)
+    expect(HUNGER_DECAY_PER_DAY).toBe(50)
     expect(TEEN_THRESHOLD).toBe(100)
     expect(ADULT_THRESHOLD).toBe(300)
   })
@@ -102,9 +102,9 @@ describe('hungerAt', () => {
   })
 
   it('decays linearly over time', () => {
-    expect(hungerAt(100, NOW, NOW + DAY_MS)).toBe(85)
-    expect(hungerAt(100, NOW, NOW + 2 * DAY_MS)).toBe(70)
-    expect(hungerAt(100, NOW, NOW + DAY_MS / 2)).toBeCloseTo(92.5)
+    expect(hungerAt(100, NOW, NOW + DAY_MS)).toBe(50)
+    expect(hungerAt(100, NOW, NOW + 2 * DAY_MS)).toBe(0)
+    expect(hungerAt(100, NOW, NOW + DAY_MS / 2)).toBeCloseTo(75)
   })
 
   it('never drops below zero', () => {
@@ -183,8 +183,8 @@ describe('applyFeed', () => {
     const pet = makePet({ treats: 1, hunger: 100, lastHungerAt: NOW })
     const { pet: fed, feeding } = applyFeed(pet, NOW + DAY_MS, 'feeding-2')
 
-    expect(feeding.hungerBefore).toBe(85)
-    expect(fed.hunger).toBe(100)
+    expect(feeding.hungerBefore).toBe(50)
+    expect(fed.hunger).toBe(70)
   })
 
   it('caps hunger at the maximum', () => {

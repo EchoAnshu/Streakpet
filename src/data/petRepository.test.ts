@@ -155,8 +155,8 @@ describe('feedPet', () => {
     await setPetFields({ treats: 1, hunger: 100, lastHungerAt: Date.now() - DAY_MS })
 
     const { pet, feeding } = await feedPet()
-    expect(feeding.hungerBefore).toBeCloseTo(85, 2)
-    expect(pet.hunger).toBe(100)
+    expect(feeding.hungerBefore).toBeCloseTo(50, 2)
+    expect(pet.hunger).toBeCloseTo(70, 2)
   })
 
   it('persists pet state across reloads', async () => {
@@ -180,6 +180,6 @@ describe('feedPet', () => {
     await setPetFields({ treats: 1, hunger: 50, lastHungerAt: Date.now() })
     const { pet } = await feedPet()
     expect(pet.hunger).toBeCloseTo(70, 4)
-    expect(hungerAt(pet.hunger, pet.lastHungerAt, pet.lastHungerAt + DAY_MS)).toBeCloseTo(55, 4)
+    expect(hungerAt(pet.hunger, pet.lastHungerAt, pet.lastHungerAt + DAY_MS)).toBeCloseTo(20, 4)
   })
 })

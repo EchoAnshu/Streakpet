@@ -216,7 +216,7 @@
             style={`width:${hunger}%;background:${hungerColor}`}
           ></div>
         </div>
-        <p class="pet-card__meter-hint">Fullness slowly drops over time. Feed treats to restore it.</p>
+        <p class="pet-card__meter-hint">Fullness drains every day. Feed treats to restore it.</p>
       </div>
 
       <div class="pet-card__feed-row">
