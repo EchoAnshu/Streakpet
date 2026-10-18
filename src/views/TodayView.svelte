@@ -3,8 +3,7 @@
   import EmptyState from '../components/EmptyState.svelte'
   import HabitForm from '../components/HabitForm.svelte'
   import HabitItem from '../components/HabitItem.svelte'
-  import PetPanel from '../components/PetPanel.svelte'
-  import ProgressSummary from '../components/ProgressSummary.svelte'
+  import WeekPulse from '../components/WeekPulse.svelte'
   import { getLocalDateKey } from '../domain/dates'
   import { isScheduledForDate, defaultColorFor, type HabitInput } from '../domain/habits'
   import { calculateCurrentStreak } from '../domain/streaks'
@@ -20,6 +19,7 @@
   let togglingIds = $state<string[]>([])
 
   let active = $derived(habitsStore.activeHabits())
+  let completions = $derived(completionsStore.getCompletions())
   let scheduledToday = $derived(active.filter((habit) => isScheduledForDate(habit, today)))
   let completedToday = $derived(
     completionsStore.completedCountFor(
@@ -69,6 +69,7 @@
     actionError = null
     try {
       await habitsStore.archiveHabit(habit.id)
+      editing = undefined
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not archive the habit.'
     }
@@ -89,8 +90,6 @@
 </script>
 
 <div class="today-view">
-  <PetPanel totalXp={petStore.getXp()} stage={petStore.getStage()} />
-
   {#if loading}
     <p class="today-view__status">Loading your habits…</p>
   {:else if loadError}
@@ -99,7 +98,7 @@
       <button type="button" class="button button--primary" onclick={retryLoad}>Try again</button>
     </div>
   {:else}
-    <ProgressSummary completed={completedToday} total={scheduledToday.length} />
+    <WeekPulse habits={active} {completions} {today} />
 
     {#if active.length === 0}
       <EmptyState
@@ -118,19 +117,20 @@
     {:else}
       <ul class="today-view__list">
         {#each scheduledToday as habit (habit.id)}
+          {@const completed = completionsStore.isCompleted(habit.id, todayKey)}
           <HabitItem
             {habit}
-            completed={completionsStore.isCompleted(habit.id, todayKey)}
+            {completed}
             completionEnabled={!togglingIds.includes(habit.id)}
-            streak={calculateCurrentStreak(habit, completionsStore.getCompletions(), today)}
+            streak={calculateCurrentStreak(habit, completions, today)}
+            willCompleteDay={!completed && completedToday + 1 === scheduledToday.length}
             onToggleComplete={handleToggleComplete}
             onEdit={startEdit}
-            onArchive={handleArchive}
           />
         {/each}
       </ul>
       <button type="button" class="button button--primary today-view__add" onclick={startAdd}>
-        Add habit
+        + Add habit
       </button>
     {/if}
 
@@ -143,6 +143,7 @@
         habit={editing}
         defaultColor={defaultColorFor(habitsStore.getHabits().length)}
         onSave={handleSave}
+        onArchive={handleArchive}
         onCancel={closeForm}
       />
     {/if}
@@ -173,7 +174,7 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .today-view__add {
@@ -187,7 +188,8 @@
 
   @media (min-width: 768px) {
     .today-view__add {
-      align-self: flex-start;
+      align-self: center;
+      min-width: 280px;
     }
   }
 </style>

@@ -24,12 +24,12 @@
     align-items: center;
     gap: var(--space-3);
     text-align: center;
-    padding: var(--space-5) var(--space-4);
+    padding: var(--space-6) var(--space-4);
   }
 
   .empty-state__title {
-    font-weight: 700;
-    font-size: 1.0625rem;
+    font-weight: 800;
+    font-size: 1.125rem;
   }
 
   .empty-state__message {

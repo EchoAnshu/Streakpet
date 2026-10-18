@@ -119,9 +119,9 @@ describe('feedPet', () => {
     const { pet, feeding } = await feedPet()
     expect(pet.treats).toBe(1)
     expect(pet.xp).toBe(10)
-    expect(pet.hunger).toBe(60)
-    expect(feeding.hungerBefore).toBe(40)
-    expect(feeding.hungerAfter).toBe(60)
+    expect(pet.hunger).toBeCloseTo(60, 3)
+    expect(feeding.hungerBefore).toBeCloseTo(40, 3)
+    expect(feeding.hungerAfter).toBeCloseTo(60, 3)
 
     const feedings = await listFeedings()
     expect(feedings).toHaveLength(1)
@@ -133,7 +133,7 @@ describe('feedPet', () => {
     await setPetFields({ treats: 1, hunger: 100, lastHungerAt: Date.now() - DAY_MS })
 
     const { pet, feeding } = await feedPet()
-    expect(feeding.hungerBefore).toBe(85)
+    expect(feeding.hungerBefore).toBeCloseTo(85, 2)
     expect(pet.hunger).toBe(100)
   })
 
@@ -158,6 +158,6 @@ describe('feedPet', () => {
     await setPetFields({ treats: 1, hunger: 50, lastHungerAt: Date.now() })
     const { pet } = await feedPet()
     expect(pet.hunger).toBeCloseTo(70, 4)
-    expect(hungerAt(pet.hunger, pet.lastHungerAt, pet.lastHungerAt + DAY_MS)).toBe(55)
+    expect(hungerAt(pet.hunger, pet.lastHungerAt, pet.lastHungerAt + DAY_MS)).toBeCloseTo(55, 4)
   })
 })

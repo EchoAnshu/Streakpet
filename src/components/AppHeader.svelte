@@ -1,51 +1,35 @@
 <script lang="ts">
-  import { formatDisplayDate } from '../domain/dates'
+  interface Props {
+    title: string
+    subtitle?: string
+  }
 
-  const dateLabel = formatDisplayDate(new Date())
+  let { title, subtitle }: Props = $props()
 </script>
 
 <header class="app-header">
-  <div class="app-header__brand">
-    <svg class="app-header__logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-      <ellipse cx="32" cy="40" rx="14" ry="12" />
-      <circle cx="18" cy="26" r="6.5" />
-      <circle cx="29" cy="19" r="6.5" />
-      <circle cx="41" cy="20" r="6.5" />
-      <circle cx="50" cy="28" r="6.5" />
-    </svg>
-    <div>
-      <p class="app-header__name">StreakPet</p>
-      <p class="app-header__date">{dateLabel}</p>
-    </div>
-  </div>
+  <h1 class="app-header__title">{title}</h1>
+  {#if subtitle}
+    <p class="app-header__subtitle">{subtitle}</p>
+  {/if}
 </header>
 
 <style>
   .app-header {
-    padding: var(--space-4) 0 var(--space-2);
+    padding: var(--space-5) 0 var(--space-2);
   }
 
-  .app-header__brand {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+  .app-header__title {
+    margin: 0;
+    font-size: clamp(1.9rem, 6vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
   }
 
-  .app-header__logo {
-    width: 30px;
-    height: 30px;
-    fill: var(--color-primary);
-    flex-shrink: 0;
-  }
-
-  .app-header__name {
-    font-weight: 700;
-    font-size: 1.125rem;
-    line-height: 1.2;
-  }
-
-  .app-header__date {
+  .app-header__subtitle {
+    margin: var(--space-1) 0 0;
     color: var(--color-muted);
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
   }
 </style>

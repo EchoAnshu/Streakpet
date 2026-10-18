@@ -1,18 +1,20 @@
 :root {
-  --color-background: #f7f6f2;
+  --color-background: #faf7f4;
   --color-surface: #ffffff;
-  --color-text: #242821;
-  --color-muted: #73786f;
-  --color-primary: #527a5a;
-  --color-primary-hover: #416648;
-  --color-primary-soft: #e7efe7;
-  --color-accent: #d9a441;
-  --color-border: #e5e6df;
-  --color-success: #3f8157;
-  --color-danger: #b84d4d;
+  --color-text: #211d18;
+  --color-muted: #7d766e;
+  --color-primary: #f25c1f;
+  --color-primary-hover: #d94e14;
+  --color-primary-soft: #ffece2;
+  --color-accent: #f5a524;
+  --color-border: #efe9e2;
+  --color-border-strong: #ded6cb;
+  --color-success: #2f9e63;
+  --color-danger: #d64545;
 
-  --radius-card: 16px;
-  --radius-button: 10px;
+  --radius-card: 22px;
+  --radius-button: 14px;
+  --radius-pill: 999px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -21,9 +23,10 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --content-width: 1100px;
+  --content-width: 680px;
 
-  --shadow-card: 0 1px 2px rgba(36, 40, 33, 0.06);
+  --shadow-card: 0 1px 2px rgba(33, 29, 24, 0.05);
+  --shadow-float: 0 12px 32px rgba(33, 29, 24, 0.16);
 }
 
 * {
@@ -36,7 +39,13 @@ html {
 
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    system-ui,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--color-text);
@@ -56,9 +65,25 @@ p {
   margin: 0;
 }
 
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .card {
@@ -69,18 +94,28 @@ p {
   padding: var(--space-4);
 }
 
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-button);
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   background: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .button--primary {
@@ -93,7 +128,7 @@ p {
 }
 
 .button--ghost {
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
   color: var(--color-text);
   background: var(--color-surface);
 }
@@ -109,8 +144,8 @@ p {
 }
 
 .button--small {
-  min-height: 36px;
-  padding: 0 var(--space-3);
+  min-height: 38px;
+  padding: 0 var(--space-4);
   font-size: 0.875rem;
 }
 

@@ -19,8 +19,8 @@ export default defineConfig({
         name: 'StreakPet',
         short_name: 'StreakPet',
         description: 'A lightweight, offline-first habit tracker with a virtual pet.',
-        theme_color: '#527a5a',
-        background_color: '#f7f6f2',
+        theme_color: '#f25c1f',
+        background_color: '#faf7f4',
         display: 'standalone',
         start_url: '/',
         icons: [
