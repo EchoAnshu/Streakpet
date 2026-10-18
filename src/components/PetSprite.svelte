@@ -1,6 +1,12 @@
 <script lang="ts">
-  import type { PetMood, PetSpecies } from '../domain/pet'
-  import { PET_SPRITES, SPRITE_SIZE, spriteColorFor } from '../domain/petSprites'
+  import type { PetMood, PetSpecies, PetStage } from '../domain/pet'
+  import {
+    PET_SPRITES,
+    SPRITE_SIZE,
+    STAGE_ACCENT_COLORS,
+    STAGE_OVERLAYS,
+    spriteColorFor,
+  } from '../domain/petSprites'
 
   interface Props {
     species: PetSpecies
@@ -9,11 +15,17 @@
     bounce?: boolean
     idle?: boolean
     mood?: PetMood
+    stage?: PetStage
   }
 
-  let { species, size = 128, label, bounce = false, idle = false, mood }: Props = $props()
+  let { species, size = 128, label, bounce = false, idle = false, mood, stage }: Props = $props()
 
   let rows = $derived(PET_SPRITES[species])
+  let overlay = $derived(
+    stage === 'teen' || stage === 'adult'
+      ? { rows: STAGE_OVERLAYS[stage], color: STAGE_ACCENT_COLORS[stage] }
+      : null,
+  )
 </script>
 
 <svg
@@ -40,6 +52,15 @@
       {/if}
     {/each}
   {/each}
+  {#if overlay}
+    {#each overlay.rows as row, y (y)}
+      {#each [...row] as char, x (x)}
+        {#if char === '1'}
+          <rect {x} {y} width="1" height="1" fill={overlay.color}></rect>
+        {/if}
+      {/each}
+    {/each}
+  {/if}
 </svg>
 
 <style>

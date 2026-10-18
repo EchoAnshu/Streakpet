@@ -182,6 +182,7 @@
           bounce={bouncing}
           idle
           {mood}
+          {stage}
         />
       </div>
 

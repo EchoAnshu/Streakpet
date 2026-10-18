@@ -68,7 +68,7 @@
   <div class="pet-companion card">
     <button type="button" class="pet-companion__open" onclick={onOpenPet}>
       <span class="pet-companion__sprite">
-        <PetSprite {species} size={spriteSize} idle {mood} bounce={bouncing} />
+        <PetSprite {species} size={spriteSize} idle {mood} bounce={bouncing} {stage} />
       </span>
       <span class="pet-companion__body">
         <span class="pet-companion__name">{petName ?? SPECIES_LABELS[species]}</span>

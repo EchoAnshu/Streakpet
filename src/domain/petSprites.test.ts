@@ -5,6 +5,8 @@ import {
   SPRITE_CHARS,
   SPRITE_SIZE,
   SPECIES_PALETTES,
+  STAGE_ACCENT_COLORS,
+  STAGE_OVERLAYS,
   spriteColorFor,
 } from './petSprites'
 
@@ -72,5 +74,44 @@ describe('pet sprites', () => {
     expect(PET_SPRITES.dolphin.slice(0, 3).join('')).toContain('o')
     expect(PET_SPRITES.cat[8]).toContain('k')
     expect(PET_SPRITES.dog.join('')).toContain('h')
+  })
+
+  it('keeps stage overlays on the sprite grid', () => {
+    for (const stage of ['teen', 'adult'] as const) {
+      const rows = STAGE_OVERLAYS[stage]
+      expect(rows).toHaveLength(SPRITE_SIZE)
+      for (const row of rows) {
+        expect(row).toHaveLength(SPRITE_SIZE)
+        for (const char of row) {
+          expect(['.', '1']).toContain(char)
+        }
+      }
+      expect(STAGE_ACCENT_COLORS[stage]).toMatch(/^#[0-9a-f]{6}$/i)
+    }
+  })
+
+  it('paints every stage overlay on the body area only', () => {
+    for (const stage of ['teen', 'adult'] as const) {
+      const rows = STAGE_OVERLAYS[stage]
+      const bodyRows = rows.slice(12)
+      expect(bodyRows.join('')).toContain('1')
+      expect(rows.slice(0, 12).join('')).toBe('.'.repeat(12 * SPRITE_SIZE))
+    }
+  })
+
+  it('fits stage overlays inside every species outline', () => {
+    for (const species of PET_SPECIES) {
+      for (const stage of ['teen', 'adult'] as const) {
+        const rows = STAGE_OVERLAYS[stage]
+        const sprite = PET_SPRITES[species]
+        rows.forEach((row, y) => {
+          ;[...row].forEach((char, x) => {
+            if (char === '1') {
+              expect(sprite[y][x]).not.toBe('o')
+            }
+          })
+        })
+      }
+    }
   })
 })
