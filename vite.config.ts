@@ -2,8 +2,11 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const DEPLOY_BASE = process.env.DEPLOY_BASE ?? '/'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base: DEPLOY_BASE,
   plugins: [
     svelte(),
     VitePWA({
@@ -22,7 +25,8 @@ export default defineConfig({
         theme_color: '#f25c1f',
         background_color: '#faf7f4',
         display: 'standalone',
-        start_url: '/',
+        start_url: DEPLOY_BASE,
+        scope: DEPLOY_BASE,
         icons: [
           {
             src: 'icon-192.png',

@@ -15,6 +15,12 @@ A lightweight, offline-first habit tracker with a virtual pet, built as a Progre
 - A history view listing completed habits by day, including archived ones.
 - Local-only data storage using IndexedDB. No account, backend, or network connection required for core features.
 
+## Live app
+
+The latest build is deployed to GitHub Pages: **https://echoanshu.github.io/Streakpet/**
+
+Open it in a browser (e.g. Chrome on Android) and choose "Add to Home screen" / "Install app" to get the full offline PWA experience. Every push to `main` redeploys automatically via the workflow in `.github/workflows/deploy.yml`.
+
 ## Tech stack
 
 | Technology       | Purpose                                  |
