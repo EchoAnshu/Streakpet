@@ -89,7 +89,7 @@
     width: 12px;
     height: 12px;
     border-radius: 3.5px;
-    background: #f0eae3;
+    background: var(--color-heat-empty);
   }
 
   .heatmap__legend {
@@ -105,6 +105,6 @@
     width: 12px;
     height: 12px;
     border-radius: 3.5px;
-    background: #f0eae3;
+    background: var(--color-heat-empty);
   }
 </style>

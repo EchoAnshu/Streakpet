@@ -11,6 +11,8 @@
   --color-border-strong: #ded6cb;
   --color-success: #2f9e63;
   --color-danger: #d64545;
+  --color-heat-empty: #f0eae3;
+  --color-nav-bg: rgba(255, 255, 255, 0.88);
 
   --radius-card: 22px;
   --radius-button: 14px;
@@ -27,14 +29,34 @@
 
   --shadow-card: 0 1px 2px rgba(33, 29, 24, 0.05);
   --shadow-float: 0 12px 32px rgba(33, 29, 24, 0.16);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --color-background: #17130f;
+  --color-surface: #221d17;
+  --color-text: #f4efe8;
+  --color-muted: #a69b8e;
+  --color-primary: #ff7a45;
+  --color-primary-hover: #ff8f61;
+  --color-primary-soft: #3d2417;
+  --color-accent: #f5a524;
+  --color-border: #322b23;
+  --color-border-strong: #4a4036;
+  --color-success: #4cc38a;
+  --color-danger: #f27f7f;
+  --color-heat-empty: #2d2721;
+  --color-nav-bg: rgba(34, 29, 23, 0.9);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
-}
-
-html {
-  color-scheme: light;
 }
 
 body {

@@ -66,7 +66,7 @@
     gap: 2px;
     padding: 6px;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.88);
+    background: var(--color-nav-bg);
     backdrop-filter: blur(14px);
     border: 1px solid rgba(33, 29, 24, 0.06);
     box-shadow: var(--shadow-float);

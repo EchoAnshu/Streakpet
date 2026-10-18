@@ -11,6 +11,21 @@
     />
     <meta name="theme-color" content="#f25c1f" />
     <title>StreakPet</title>
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('streakpet:theme')
+          var pref =
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system'
+          var dark =
+            pref === 'dark' ||
+            (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

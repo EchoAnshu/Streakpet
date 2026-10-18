@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { THEME_LABELS, THEME_PREFERENCES } from '../domain/theme'
   import { playComplete } from '../lib/sound'
   import * as settingsStore from '../stores/settings.svelte'
 
+  let themePreference = $derived(settingsStore.getTheme())
   let permission = $state<NotificationPermission | 'unsupported'>(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
   )
@@ -20,6 +22,24 @@
 </script>
 
 <div class="settings-view">
+  <section class="card">
+    <h2>Appearance</h2>
+    <p class="settings-view__note">Choose how StreakPet looks on this device.</p>
+    <div class="settings-segments" role="group" aria-label="Theme">
+      {#each THEME_PREFERENCES as option (option)}
+        <button
+          type="button"
+          class="settings-segment"
+          class:settings-segment--active={themePreference === option}
+          aria-pressed={themePreference === option}
+          onclick={() => settingsStore.setTheme(option)}
+        >
+          {THEME_LABELS[option]}
+        </button>
+      {/each}
+    </div>
+  </section>
+
   <section class="card">
     <h2>Sounds</h2>
     <label class="settings-toggle">
@@ -78,7 +98,7 @@
       network connection, or tracking is required.
     </p>
     <p class="settings-view__note">
-      Export, import, and theme settings will arrive in later updates.
+      Export and import will arrive in later updates.
     </p>
   </section>
 </div>
@@ -98,6 +118,34 @@
 
   .settings-view__button {
     margin-top: var(--space-3);
+  }
+
+  .settings-segments {
+    display: flex;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-top: var(--space-3);
+  }
+
+  .settings-segment {
+    flex: 1;
+    min-height: 44px;
+    border: none;
+    background: var(--color-surface);
+    font: inherit;
+    font-weight: 600;
+    color: var(--color-muted);
+    cursor: pointer;
+  }
+
+  .settings-segment + .settings-segment {
+    border-left: 1.5px solid var(--color-border-strong);
+  }
+
+  .settings-segment--active {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
   }
 
   .settings-toggle {

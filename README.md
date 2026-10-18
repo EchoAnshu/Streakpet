@@ -10,6 +10,7 @@ A lightweight, offline-first habit tracker with a virtual pet, built as a Progre
 - A habit detail screen with current and best streaks, a tappable month calendar, and a year activity heatmap.
 - A pixel-art pet you adopt and name. Completions earn treats; feeding treats restores hunger and grows the pet from baby to teen to adult. Hunger drops a little each day, so the pet gets hungry between visits but never dies.
 - In-app reminder toasts while the app is open, plus system notifications when permission is granted.
+- Light, dark, and system themes with a no-flash startup.
 - A history view listing completed habits by day, including archived ones.
 - Local-only data storage using IndexedDB. No account, backend, or network connection required for core features.
 
