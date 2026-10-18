@@ -34,7 +34,7 @@
   <AppHeader title={TITLES[view]} {subtitle} />
   <main class="app-main">
     {#if view === 'today'}
-      <TodayView />
+      <TodayView onOpenPet={() => (view = 'pet')} />
     {:else if view === 'history'}
       <HistoryView />
     {:else if view === 'pet'}

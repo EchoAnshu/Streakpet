@@ -4,6 +4,7 @@
   import HabitDetail from '../components/HabitDetail.svelte'
   import HabitForm from '../components/HabitForm.svelte'
   import HabitItem from '../components/HabitItem.svelte'
+  import PetCompanion from '../components/PetCompanion.svelte'
   import WeekPulse from '../components/WeekPulse.svelte'
   import { getLocalDateKey } from '../domain/dates'
   import { isScheduledForDate, defaultColorFor, type HabitInput } from '../domain/habits'
@@ -11,6 +12,12 @@
   import * as completionsStore from '../stores/completions.svelte'
   import * as habitsStore from '../stores/habits.svelte'
   import * as petStore from '../stores/pet.svelte'
+
+  interface Props {
+    onOpenPet: () => void
+  }
+
+  let { onOpenPet }: Props = $props()
 
   const today = new Date()
   const todayKey = getLocalDateKey(today)
@@ -117,6 +124,7 @@
       <button type="button" class="button button--primary" onclick={retryLoad}>Try again</button>
     </div>
   {:else}
+    <PetCompanion {onOpenPet} />
     <WeekPulse habits={active} {completions} {today} />
 
     {#if active.length === 0}
