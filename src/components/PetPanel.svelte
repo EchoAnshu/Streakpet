@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
-    DAILY_BONUS_XP,
-    HABIT_COMPLETION_XP,
+    TREATS_PER_COMPLETION,
     STAGE_LABELS,
     stageProgress,
     type PetStage,
@@ -61,8 +60,8 @@
     {/if}
 
     <p class="pet-panel__hint">
-      Each habit completion earns {HABIT_COMPLETION_XP} XP. Complete everything scheduled for a
-      day for a +{DAILY_BONUS_XP} bonus.
+      Each habit completion earns {TREATS_PER_COMPLETION} treat. Feed your pet to help it grow and
+      keep it happy.
     </p>
   </div>
 </section>

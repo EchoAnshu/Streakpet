@@ -15,6 +15,8 @@ function makeHabit(scheduledDays: number[], createdKey: string): Habit {
   return {
     id: 'habit-1',
     name: 'Test habit',
+    icon: '🎯',
+    color: '#F25C1F',
     scheduledDays,
     createdAt,
     updatedAt: createdAt,

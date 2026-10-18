@@ -2,7 +2,7 @@ import type { Completion, Habit } from '../types/models'
 import { applyCompletion, listCompletions, revertCompletion } from '../data/completionRepository'
 import { parseDateKey } from '../domain/dates'
 import { isScheduledForDate } from '../domain/habits'
-import { setRewards } from './pet.svelte'
+import { setPet } from './pet.svelte'
 
 let completions = $state<Completion[]>([])
 let loading = $state(true)
@@ -60,7 +60,7 @@ export async function toggleCompletion(habit: Habit, dateKey: string): Promise<v
   if (existing) {
     completions = completions.filter((completion) => completion.id !== existing.id)
     try {
-      setRewards(await revertCompletion(habit.id, dateKey))
+      setPet(await revertCompletion(habit.id, dateKey))
     } catch (error) {
       completions = [...completions, existing]
       throw toError(error, 'Could not undo the completion.')
@@ -80,7 +80,7 @@ export async function toggleCompletion(habit: Habit, dateKey: string): Promise<v
   }
   completions = [...completions, completion]
   try {
-    setRewards(await applyCompletion(completion))
+    setPet(await applyCompletion(completion))
   } catch (error) {
     completions = completions.filter((item) => item.id !== completion.id)
     throw toError(error, 'Could not save the completion.')

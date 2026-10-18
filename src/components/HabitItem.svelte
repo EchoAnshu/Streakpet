@@ -45,8 +45,8 @@
 
   <div class="habit-item__body">
     <p class="habit-item__name">{habit.name}</p>
-    {#if habit.description}
-      <p class="habit-item__description">{habit.description}</p>
+    {#if habit.note}
+      <p class="habit-item__description">{habit.note}</p>
     {/if}
     <p class="habit-item__schedule">{metaLabel}</p>
   </div>

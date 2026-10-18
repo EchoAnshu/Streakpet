@@ -6,13 +6,13 @@
   import TodayView from './views/TodayView.svelte'
   import { loadCompletions } from './stores/completions.svelte'
   import { loadHabits } from './stores/habits.svelte'
-  import { loadRewards } from './stores/pet.svelte'
+  import { loadPet } from './stores/pet.svelte'
 
   let view = $state<ViewId>('today')
 
   loadHabits()
   loadCompletions()
-  loadRewards()
+  loadPet()
 </script>
 
 <div class="app-shell">

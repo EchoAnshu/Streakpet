@@ -6,6 +6,8 @@ function makeHabit(id: string, archived = false): Habit {
   return {
     id,
     name: `Habit ${id}`,
+    icon: '🎯',
+    color: '#F25C1F',
     scheduledDays: [0, 1, 2, 3, 4, 5, 6],
     createdAt: 0,
     updatedAt: 0,

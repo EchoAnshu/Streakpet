@@ -1,13 +1,12 @@
-import type { Completion, Habit, Reward } from '../types/models'
+import type { Completion, Habit, Pet } from '../types/models'
 import { openDatabase, requestToPromise, transactionDone } from './db'
 import { parseDateKey } from '../domain/dates'
 import { isScheduledForDate } from '../domain/habits'
 import {
-  DAILY_BONUS_XP,
-  HABIT_COMPLETION_XP,
-  dailyBonusKey,
-  habitRewardKey,
-  isDailyBonusEarned,
+  FULL_DAY_BONUS_TREATS,
+  TREATS_PER_COMPLETION,
+  createDefaultPet,
+  hungerAt,
 } from '../domain/pet'
 
 export async function listCompletions(): Promise<Completion[]> {
@@ -35,126 +34,82 @@ async function completedHabitIdsFor(store: IDBObjectStore, dateKey: string): Pro
   return completions.map((completion) => completion.habitId)
 }
 
-async function activateReward(store: IDBObjectStore, reward: Reward): Promise<void> {
-  const existing = await requestToPromise(store.get(reward.id) as IDBRequest<Reward | undefined>)
-  if (!existing) {
-    await requestToPromise(store.add(reward))
-  } else if (existing.reversed) {
-    await requestToPromise(store.put({ ...existing, reversed: false, reversedAt: undefined }))
+function fullDayReached(scheduledIds: string[], completedIds: string[]): boolean {
+  if (scheduledIds.length === 0) return false
+  const completed = new Set(completedIds)
+  return scheduledIds.every((habitId) => completed.has(habitId))
+}
+
+async function loadOrCreatePet(store: IDBObjectStore, now: number): Promise<Pet> {
+  const existing = await requestToPromise(store.get('pet') as IDBRequest<Pet | undefined>)
+  return existing ?? createDefaultPet(now)
+}
+
+function refreshedPet(pet: Pet, treatsDelta: number, now: number): Pet {
+  return {
+    ...pet,
+    treats: Math.max(0, pet.treats + treatsDelta),
+    hunger: hungerAt(pet.hunger, pet.lastHungerAt, now),
+    lastHungerAt: now,
   }
 }
 
-async function reverseReward(store: IDBObjectStore, id: string, reversedAt: number): Promise<void> {
-  const existing = await requestToPromise(store.get(id) as IDBRequest<Reward | undefined>)
-  if (existing && !existing.reversed) {
-    await requestToPromise(store.put({ ...existing, reversed: true, reversedAt }))
-  }
-}
-
-export async function applyCompletion(completion: Completion): Promise<Reward[]> {
+export async function applyCompletion(completion: Completion): Promise<Pet> {
   const db = await openDatabase()
-  const transaction = db.transaction(['completions', 'rewards', 'habits'], 'readwrite')
+  const transaction = db.transaction(['completions', 'habits', 'pet'], 'readwrite')
   const completionsStore = transaction.objectStore('completions')
-  const rewardsStore = transaction.objectStore('rewards')
   const habitsStore = transaction.objectStore('habits')
+  const petStore = transaction.objectStore('pet')
+  const now = Date.now()
 
-  await Promise.all([
-    requestToPromise(completionsStore.add(completion)),
-    activateReward(rewardsStore, {
-      id: habitRewardKey(completion.habitId, completion.date),
-      type: 'habit_completion',
-      date: completion.date,
-      habitId: completion.habitId,
-      xp: HABIT_COMPLETION_XP,
-      reversed: false,
-      createdAt: completion.completedAt,
-    }),
-  ])
+  await requestToPromise(completionsStore.add(completion))
 
   const date = parseDateKey(completion.date)
   const scheduledIds = await scheduledHabitIdsFor(habitsStore, date)
   const completedIds = await completedHabitIdsFor(completionsStore, completion.date)
+  const bonus = fullDayReached(scheduledIds, completedIds) ? FULL_DAY_BONUS_TREATS : 0
 
-  if (isDailyBonusEarned(scheduledIds, completedIds)) {
-    await activateReward(rewardsStore, {
-      id: dailyBonusKey(completion.date),
-      type: 'daily_bonus',
-      date: completion.date,
-      xp: DAILY_BONUS_XP,
-      reversed: false,
-      createdAt: completion.completedAt,
-    })
-  }
+  const pet = await loadOrCreatePet(petStore, now)
+  const updated = refreshedPet(pet, TREATS_PER_COMPLETION + bonus, now)
 
-  const [rewards] = await Promise.all([
-    requestToPromise(rewardsStore.getAll() as IDBRequest<Reward[]>),
-    transactionDone(transaction),
-  ])
-  return rewards
+  await Promise.all([requestToPromise(petStore.put(updated)), transactionDone(transaction)])
+  return updated
 }
 
-export async function recalculateDailyBonus(dateKey: string): Promise<Reward[]> {
+export async function revertCompletion(habitId: string, dateKey: string): Promise<Pet> {
   const db = await openDatabase()
-  const transaction = db.transaction(['completions', 'rewards', 'habits'], 'readwrite')
+  const transaction = db.transaction(['completions', 'habits', 'pet'], 'readwrite')
   const completionsStore = transaction.objectStore('completions')
-  const rewardsStore = transaction.objectStore('rewards')
   const habitsStore = transaction.objectStore('habits')
+  const petStore = transaction.objectStore('pet')
+  const now = Date.now()
 
   const date = parseDateKey(dateKey)
   const scheduledIds = await scheduledHabitIdsFor(habitsStore, date)
-  const completedIds = await completedHabitIdsFor(completionsStore, dateKey)
-  const bonusId = dailyBonusKey(dateKey)
-
-  if (isDailyBonusEarned(scheduledIds, completedIds)) {
-    await activateReward(rewardsStore, {
-      id: bonusId,
-      type: 'daily_bonus',
-      date: dateKey,
-      xp: DAILY_BONUS_XP,
-      reversed: false,
-      createdAt: Date.now(),
-    })
-  } else {
-    await reverseReward(rewardsStore, bonusId, Date.now())
-  }
-
-  const [rewards] = await Promise.all([
-    requestToPromise(rewardsStore.getAll() as IDBRequest<Reward[]>),
-    transactionDone(transaction),
-  ])
-  return rewards
-}
-
-export async function revertCompletion(habitId: string, dateKey: string): Promise<Reward[]> {
-  const db = await openDatabase()
-  const transaction = db.transaction(['completions', 'rewards', 'habits'], 'readwrite')
-  const completionsStore = transaction.objectStore('completions')
-  const rewardsStore = transaction.objectStore('rewards')
-  const habitsStore = transaction.objectStore('habits')
+  const completedBefore = await completedHabitIdsFor(completionsStore, dateKey)
 
   const existing = await requestToPromise(
     completionsStore.index('habitId_date').get([habitId, dateKey]) as IDBRequest<
       Completion | undefined
     >
   )
+
+  let treatsDelta = 0
   if (existing) {
     await requestToPromise(completionsStore.delete(existing.id))
+    treatsDelta -= TREATS_PER_COMPLETION
   }
 
-  const now = Date.now()
-  await reverseReward(rewardsStore, habitRewardKey(habitId, dateKey), now)
-
-  const date = parseDateKey(dateKey)
-  const scheduledIds = await scheduledHabitIdsFor(habitsStore, date)
-  const completedIds = await completedHabitIdsFor(completionsStore, dateKey)
-
-  if (!isDailyBonusEarned(scheduledIds, completedIds)) {
-    await reverseReward(rewardsStore, dailyBonusKey(dateKey), now)
+  const completedAfter = completedBefore.filter((id) => id !== habitId)
+  const wasFull = fullDayReached(scheduledIds, completedBefore)
+  const isFull = fullDayReached(scheduledIds, completedAfter)
+  if (wasFull && !isFull) {
+    treatsDelta -= FULL_DAY_BONUS_TREATS
   }
 
-  const [rewards] = await Promise.all([
-    requestToPromise(rewardsStore.getAll() as IDBRequest<Reward[]>),
-    transactionDone(transaction),
-  ])
-  return rewards
+  const pet = await loadOrCreatePet(petStore, now)
+  const updated = refreshedPet(pet, treatsDelta, now)
+
+  await Promise.all([requestToPromise(petStore.put(updated)), transactionDone(transaction)])
+  return updated
 }

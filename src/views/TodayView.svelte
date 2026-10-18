@@ -6,9 +6,8 @@
   import PetPanel from '../components/PetPanel.svelte'
   import ProgressSummary from '../components/ProgressSummary.svelte'
   import { getLocalDateKey } from '../domain/dates'
-  import { isScheduledForDate, type HabitInput } from '../domain/habits'
+  import { isScheduledForDate, defaultColorFor, type HabitInput } from '../domain/habits'
   import { calculateCurrentStreak } from '../domain/streaks'
-  import { recalculateDailyBonus } from '../data/completionRepository'
   import * as completionsStore from '../stores/completions.svelte'
   import * as habitsStore from '../stores/habits.svelte'
   import * as petStore from '../stores/pet.svelte'
@@ -38,7 +37,7 @@
   function retryLoad() {
     habitsStore.loadHabits(true)
     completionsStore.loadCompletions(true)
-    petStore.loadRewards(true)
+    petStore.loadPet(true)
   }
 
   function startAdd() {
@@ -70,9 +69,6 @@
     actionError = null
     try {
       await habitsStore.archiveHabit(habit.id)
-      if (isScheduledForDate(habit, today)) {
-        petStore.setRewards(await recalculateDailyBonus(todayKey))
-      }
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not archive the habit.'
     }
@@ -93,7 +89,7 @@
 </script>
 
 <div class="today-view">
-  <PetPanel totalXp={petStore.getTotalXp()} stage={petStore.getStage()} />
+  <PetPanel totalXp={petStore.getXp()} stage={petStore.getStage()} />
 
   {#if loading}
     <p class="today-view__status">Loading your habits…</p>
@@ -143,7 +139,12 @@
     {/if}
 
     {#if editing !== undefined}
-      <HabitForm habit={editing} onSave={handleSave} onCancel={closeForm} />
+      <HabitForm
+        habit={editing}
+        defaultColor={defaultColorFor(habitsStore.getHabits().length)}
+        onSave={handleSave}
+        onCancel={closeForm}
+      />
     {/if}
   {/if}
 </div>
