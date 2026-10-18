@@ -11,7 +11,7 @@
     streak: number
     willCompleteDay: boolean
     onToggleComplete: (habit: Habit) => void
-    onEdit: (habit: Habit) => void
+    onOpen: (habit: Habit) => void
   }
 
   let {
@@ -21,7 +21,7 @@
     streak,
     willCompleteDay,
     onToggleComplete,
-    onEdit,
+    onOpen,
   }: Props = $props()
 
   let streakLabel = $derived(streak > 0 ? `${streak} day${streak === 1 ? '' : 's'}` : null)
@@ -57,8 +57,8 @@
   <button
     type="button"
     class="habit-card__main"
-    aria-label={`Edit ${habit.name}`}
-    onclick={() => onEdit(habit)}
+    aria-label={`Open details for ${habit.name}`}
+    onclick={() => onOpen(habit)}
   >
     <span class="habit-card__icon" aria-hidden="true" style={`background:${habit.color}2e`}>
       {habit.icon}

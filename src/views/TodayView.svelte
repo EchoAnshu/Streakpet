@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Habit } from '../types/models'
   import EmptyState from '../components/EmptyState.svelte'
+  import HabitDetail from '../components/HabitDetail.svelte'
   import HabitForm from '../components/HabitForm.svelte'
   import HabitItem from '../components/HabitItem.svelte'
   import WeekPulse from '../components/WeekPulse.svelte'
@@ -15,6 +16,7 @@
   const todayKey = getLocalDateKey(today)
 
   let editing = $state<Habit | null | undefined>(undefined)
+  let selectedId = $state<string | null>(null)
   let actionError = $state<string | null>(null)
   let togglingIds = $state<string[]>([])
 
@@ -26,6 +28,9 @@
       todayKey,
       scheduledToday.map((habit) => habit.id)
     )
+  )
+  let selectedHabit = $derived(
+    selectedId === null ? null : (active.find((habit) => habit.id === selectedId) ?? null)
   )
   let loadError = $derived(
     habitsStore.getLoadError() ?? completionsStore.getLoadError() ?? petStore.getLoadError()
@@ -54,6 +59,15 @@
     editing = undefined
   }
 
+  function openDetail(habit: Habit) {
+    actionError = null
+    selectedId = habit.id
+  }
+
+  function closeDetail() {
+    selectedId = null
+  }
+
   async function handleSave(input: HabitInput) {
     if (editing) {
       await habitsStore.updateHabit(editing.id, input)
@@ -70,22 +84,27 @@
     try {
       await habitsStore.archiveHabit(habit.id)
       editing = undefined
+      selectedId = null
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not archive the habit.'
     }
   }
 
-  async function handleToggleComplete(habit: Habit) {
+  async function toggleFor(habit: Habit, dateKey: string) {
     if (togglingIds.includes(habit.id)) return
     togglingIds = [...togglingIds, habit.id]
     actionError = null
     try {
-      await completionsStore.toggleCompletion(habit, todayKey)
+      await completionsStore.toggleCompletion(habit, dateKey)
     } catch (error) {
       actionError = error instanceof Error ? error.message : 'Could not update the completion.'
     } finally {
       togglingIds = togglingIds.filter((id) => id !== habit.id)
     }
+  }
+
+  async function handleToggleComplete(habit: Habit) {
+    await toggleFor(habit, todayKey)
   }
 </script>
 
@@ -125,7 +144,7 @@
             streak={calculateCurrentStreak(habit, completions, today)}
             willCompleteDay={!completed && completedToday + 1 === scheduledToday.length}
             onToggleComplete={handleToggleComplete}
-            onEdit={startEdit}
+            onOpen={openDetail}
           />
         {/each}
       </ul>
@@ -136,6 +155,20 @@
 
     {#if actionError}
       <p class="today-view__action-error" role="alert">{actionError}</p>
+    {/if}
+
+    {#if selectedHabit}
+      {@const detailHabit = selectedHabit}
+      <HabitDetail
+        habit={detailHabit}
+        {completions}
+        {today}
+        active={editing === undefined}
+        onClose={closeDetail}
+        onEdit={startEdit}
+        onArchive={handleArchive}
+        onToggleDay={(dateKey) => toggleFor(detailHabit, dateKey)}
+      />
     {/if}
 
     {#if editing !== undefined}
