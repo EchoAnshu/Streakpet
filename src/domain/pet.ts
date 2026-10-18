@@ -64,6 +64,10 @@ export function stageForXp(totalXp: number): PetStage {
   return 'baby'
 }
 
+export function petAgeInDays(createdAt: number, now: number): number {
+  return Math.max(0, Math.floor((now - createdAt) / DAY_MS))
+}
+
 export interface StageProgress {
   stage: PetStage
   earned: number

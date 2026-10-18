@@ -85,6 +85,28 @@ describe('adoptPet', () => {
     expect(adopted.xp).toBe(40)
     expect(adopted.treats).toBe(3)
   })
+
+  it('keeps the adoption date when re-adopting without a fresh start', async () => {
+    await setPetFields({ createdAt: 12345, hunger: 55 })
+    const adopted = await adoptPet('bunny', null)
+    expect(adopted.createdAt).toBe(12345)
+  })
+
+  it('starts fresh when switching pets: xp reset, full hunger, new age', async () => {
+    await adoptPet('cat', 'Miso')
+    await setPetFields({ xp: 250, treats: 5, hunger: 30, lastHungerAt: Date.now(), createdAt: 12345 })
+
+    const before = await getPet()
+    const switched = await adoptPet('panda', 'Boo', { freshStart: true })
+
+    expect(switched.species).toBe('panda')
+    expect(switched.name).toBe('Boo')
+    expect(switched.xp).toBe(0)
+    expect(switched.treats).toBe(before.treats)
+    expect(switched.hunger).toBe(100)
+    expect(switched.createdAt).toBeGreaterThan(before.createdAt)
+    expect((await getPet()).xp).toBe(0)
+  })
 })
 
 describe('feedPet', () => {

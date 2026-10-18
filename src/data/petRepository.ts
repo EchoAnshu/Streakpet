@@ -1,5 +1,5 @@
 import type { Feeding, Pet } from '../types/models'
-import { applyFeed, canFeed, createDefaultPet } from '../domain/pet'
+import { applyFeed, canFeed, createDefaultPet, HUNGER_MAX } from '../domain/pet'
 import { openDatabase, requestToPromise, transactionDone } from './db'
 
 export async function getPet(): Promise<Pet> {
@@ -16,16 +16,31 @@ export async function getPet(): Promise<Pet> {
   return pet
 }
 
-export async function adoptPet(species: string, name: string | null): Promise<Pet> {
+export interface AdoptOptions {
+  freshStart?: boolean
+}
+
+export async function adoptPet(
+  species: string,
+  name: string | null,
+  options: AdoptOptions = {}
+): Promise<Pet> {
   const db = await openDatabase()
   const transaction = db.transaction('pet', 'readwrite')
   const store = transaction.objectStore('pet')
+  const now = Date.now()
   const existing = await requestToPromise(store.get('pet') as IDBRequest<Pet | undefined>)
-  const pet = existing ?? createDefaultPet(Date.now())
+  const base = existing ?? createDefaultPet(now)
+  const fresh = options.freshStart === true
   const adopted: Pet = {
-    ...pet,
+    ...base,
     species,
     name: name?.trim() ? name.trim() : null,
+    xp: fresh ? 0 : base.xp,
+    treats: base.treats,
+    hunger: fresh ? HUNGER_MAX : base.hunger,
+    lastHungerAt: fresh ? now : base.lastHungerAt,
+    createdAt: fresh ? now : base.createdAt,
   }
   await Promise.all([requestToPromise(store.put(adopted)), transactionDone(transaction)])
   return adopted

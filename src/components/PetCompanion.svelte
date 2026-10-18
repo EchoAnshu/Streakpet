@@ -4,9 +4,9 @@
   import {
     MOOD_LABELS,
     SPECIES_LABELS,
-    STAGE_LABELS,
     isPetSpecies,
     moodForHunger,
+    petAgeInDays,
     type PetSpecies,
   } from '../domain/pet'
   import * as petStore from '../stores/pet.svelte'
@@ -23,10 +23,11 @@
     return value && isPetSpecies(value) ? value : null
   })
   let petName = $derived(petStore.getPetName())
-  let stage = $derived(petStore.getStage())
   let treats = $derived(petStore.getTreats())
 
   let nowTick = $state(Date.now())
+  let createdAt = $derived(petStore.getCreatedAt())
+  let ageInDays = $derived(createdAt === null ? 0 : petAgeInDays(createdAt, nowTick))
   let hunger = $derived(Math.round(petStore.getHunger(nowTick)))
   let mood = $derived(moodForHunger(hunger))
   let hungerColor = $derived(hunger >= 70 ? '#2f9e63' : hunger >= 40 ? '#f5a524' : '#d64545')
@@ -45,7 +46,7 @@
     <span class="pet-companion__body">
       <span class="pet-companion__name">{petName ?? SPECIES_LABELS[species]}</span>
       <span class="pet-companion__meta">
-        {STAGE_LABELS[stage]} · {MOOD_LABELS[mood]} · {treats}
+        {ageInDays} {ageInDays === 1 ? 'day' : 'days'} old · {MOOD_LABELS[mood]} · {treats}
         {treats === 1 ? 'treat' : 'treats'}
       </span>
       <span class="pet-companion__meter">

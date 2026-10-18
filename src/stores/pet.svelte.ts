@@ -57,6 +57,10 @@ export function getTreats(): number {
   return pet?.treats ?? 0
 }
 
+export function getCreatedAt(): number | null {
+  return pet?.createdAt ?? null
+}
+
 export function getHunger(now: number = Date.now()): number {
   if (!pet) return 100
   return hungerAt(pet.hunger, pet.lastHungerAt, now)
@@ -95,6 +99,10 @@ export async function loadPet(force = false): Promise<void> {
 
 export async function adopt(species: string, name: string | null): Promise<void> {
   pet = await adoptPet(species, name)
+}
+
+export async function switchPet(species: string, name: string | null): Promise<void> {
+  pet = await adoptPet(species, name, { freshStart: true })
 }
 
 export async function feed(): Promise<void> {

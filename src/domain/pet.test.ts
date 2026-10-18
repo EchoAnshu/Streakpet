@@ -17,6 +17,7 @@ import {
   hungerAt,
   isPetSpecies,
   moodForHunger,
+  petAgeInDays,
   stageForXp,
   stageProgress,
 } from './pet'
@@ -76,6 +77,22 @@ describe('stageProgress', () => {
 
   it('reports no goal for the adult stage', () => {
     expect(stageProgress(300)).toEqual({ stage: 'adult', earned: 0, goal: null, nextStage: null })
+  })
+})
+
+describe('petAgeInDays', () => {
+  const createdAt = NOW - 3 * DAY_MS - 12 * 60 * 60 * 1000
+
+  it('counts whole days since adoption', () => {
+    expect(petAgeInDays(createdAt, NOW)).toBe(3)
+  })
+
+  it('reports age zero on adoption day', () => {
+    expect(petAgeInDays(NOW, NOW)).toBe(0)
+  })
+
+  it('never goes negative on clock skew', () => {
+    expect(petAgeInDays(NOW, NOW - DAY_MS)).toBe(0)
   })
 })
 

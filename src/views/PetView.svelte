@@ -9,6 +9,7 @@
     STAGE_LABELS,
     isPetSpecies,
     moodForHunger,
+    petAgeInDays,
     type PetSpecies,
   } from '../domain/pet'
   import { burstConfetti } from '../lib/confetti'
@@ -30,6 +31,8 @@
   let feedCheck = $derived(petStore.getFeedCheck())
 
   let nowTick = $state(Date.now())
+  let createdAt = $derived(petStore.getCreatedAt())
+  let ageInDays = $derived(createdAt === null ? 0 : petAgeInDays(createdAt, nowTick))
   let hunger = $derived(Math.round(petStore.getHunger(nowTick)))
   let mood = $derived(moodForHunger(hunger))
   let hungerColor = $derived(hunger >= 70 ? '#2f9e63' : hunger >= 40 ? '#f5a524' : '#d64545')
@@ -39,6 +42,7 @@
   let actionError = $state<string | null>(null)
   let busy = $state(false)
   let bouncing = $state(false)
+  let switching = $state(false)
 
   onMount(() => {
     const interval = window.setInterval(() => (nowTick = Date.now()), 60_000)
@@ -54,7 +58,13 @@
     busy = true
     actionError = null
     try {
-      await petStore.adopt(chosen, nameInput.trim() || null)
+      if (switching) {
+        await petStore.switchPet(chosen, nameInput.trim() || null)
+        switching = false
+      } else {
+        await petStore.adopt(chosen, nameInput.trim() || null)
+      }
+      nameInput = ''
       playAdopt()
       burstConfetti(
         { x: window.innerWidth / 2, y: window.innerHeight / 3 },
@@ -66,6 +76,21 @@
     } finally {
       busy = false
     }
+  }
+
+  function startSwitch() {
+    const label = petName ?? (species ? SPECIES_LABELS[species] : 'your pet')
+    const confirmed = window.confirm(
+      `Switch to a new pet? ${label} will be released. Your treats are kept, but XP, growth, and age start over.`
+    )
+    if (!confirmed) return
+    actionError = null
+    chosen = species ?? 'cat'
+    switching = true
+  }
+
+  function cancelSwitch() {
+    switching = false
   }
 
   async function feed() {
@@ -95,10 +120,16 @@
         Try again
       </button>
     </div>
-  {:else if !adopted}
+  {:else if !adopted || switching}
     <section class="card adopt">
-      <h2 class="adopt__title">Choose your companion</h2>
-      <p class="adopt__hint">Finish habits to earn treats, then feed your pet to help it grow.</p>
+      <h2 class="adopt__title">{switching ? 'Choose a new companion' : 'Choose your companion'}</h2>
+      <p class="adopt__hint">
+        {#if switching}
+          Your current pet will be released. Your treats are kept; XP, growth, and age start over.
+        {:else}
+          Finish habits to earn treats, then feed your pet to help it grow.
+        {/if}
+      </p>
 
       <div class="adopt__grid" role="radiogroup" aria-label="Pet species">
         {#each PET_SPECIES as option (option)}
@@ -121,7 +152,7 @@
         type="text"
         bind:value={nameInput}
         maxlength="24"
-        placeholder="Name your pet (optional)"
+        placeholder={switching ? 'Name your new pet (optional)' : 'Name your pet (optional)'}
         aria-label="Pet name"
       />
 
@@ -133,6 +164,12 @@
       >
         {busy ? 'Adopting…' : `Adopt a ${SPECIES_LABELS[chosen]}`}
       </button>
+
+      {#if switching}
+        <button type="button" class="button button--ghost adopt__cancel" onclick={cancelSwitch}>
+          Keep my current pet
+        </button>
+      {/if}
     </section>
   {:else if species}
     <section class="card pet-card">
@@ -148,6 +185,9 @@
       <h2 class="pet-card__name">
         {petName ?? SPECIES_LABELS[species]}
       </h2>
+      <p class="pet-card__age">
+        {ageInDays} {ageInDays === 1 ? 'day' : 'days'} old
+      </p>
       <div class="pet-card__chips">
         <span class="pet-chip">{STAGE_LABELS[stage]}</span>
         <span class="pet-chip" class:pet-chip--mood={mood === 'sad' || mood === 'hungry'}>
@@ -158,13 +198,13 @@
 
       <div class="pet-card__meter">
         <div class="pet-card__meter-head">
-          <span class="pet-card__meter-label">Hunger</span>
+          <span class="pet-card__meter-label">Fullness</span>
           <span class="pet-card__meter-value">{hunger} / 100</span>
         </div>
         <div
           class="pet-card__meter-track"
           role="progressbar"
-          aria-label="Pet hunger"
+          aria-label="Pet fullness"
           aria-valuemin="0"
           aria-valuemax="100"
           aria-valuenow={hunger}
@@ -174,7 +214,7 @@
             style={`width:${hunger}%;background:${hungerColor}`}
           ></div>
         </div>
-        <p class="pet-card__meter-hint">Hunger drops a little every day.</p>
+        <p class="pet-card__meter-hint">Fullness slowly drops over time. Feed treats to restore it.</p>
       </div>
 
       <div class="pet-card__feed-row">
@@ -202,7 +242,7 @@
           title={feedCheck.ok ? undefined : feedCheck.reason}
           onclick={feed}
         >
-          Feed (+{FEED_HUNGER_RESTORE} hunger)
+          Feed (+{FEED_HUNGER_RESTORE} fullness)
         </button>
       </div>
       {#if !feedCheck.ok && feedCheck.reason}
@@ -233,6 +273,16 @@
         <p class="pet-card__meter-hint">Fully grown</p>
       {/if}
       <p class="pet-card__meter-hint">{xp} XP total from habits and feedings.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="pet-card__section-title">Companion</h2>
+      <p class="pet-card__meter-hint">
+        Want a different companion? You can switch pets at any time.
+      </p>
+      <button type="button" class="button button--ghost pet-card__switch" onclick={startSwitch}>
+        Switch pet
+      </button>
     </section>
   {/if}
 
@@ -336,6 +386,10 @@
     width: 100%;
   }
 
+  .adopt__cancel {
+    width: 100%;
+  }
+
   .pet-card {
     display: flex;
     flex-direction: column;
@@ -354,6 +408,13 @@
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.02em;
+  }
+
+  .pet-card__age {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: calc(-1 * var(--space-2));
   }
 
   .pet-card__chips {
@@ -461,5 +522,10 @@
     font-size: 1.0625rem;
     font-weight: 800;
     text-align: left;
+  }
+
+  .pet-card__switch {
+    width: 100%;
+    margin-top: var(--space-3);
   }
 </style>
