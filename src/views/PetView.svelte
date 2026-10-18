@@ -180,6 +180,7 @@
           label={`${SPECIES_LABELS[species]} at the ${STAGE_LABELS[stage].toLowerCase()} stage`}
           bounce={bouncing}
           idle
+          {mood}
         />
       </div>
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { PetSpecies } from '../domain/pet'
-  import { PET_SPRITES, spriteColorFor } from '../domain/petSprites'
+  import type { PetMood, PetSpecies } from '../domain/pet'
+  import { PET_SPRITES, SPRITE_SIZE, spriteColorFor } from '../domain/petSprites'
 
   interface Props {
     species: PetSpecies
@@ -8,18 +8,23 @@
     label?: string
     bounce?: boolean
     idle?: boolean
+    mood?: PetMood
   }
 
-  let { species, size = 128, label, bounce = false, idle = false }: Props = $props()
+  let { species, size = 128, label, bounce = false, idle = false, mood }: Props = $props()
 
   let rows = $derived(PET_SPRITES[species])
 </script>
 
 <svg
   class="pet-sprite"
-  class:pet-sprite--idle={idle}
+  class:pet-sprite--idle={idle && !mood}
+  class:pet-sprite--mood-happy={idle && mood === 'happy'}
+  class:pet-sprite--mood-content={idle && mood === 'content'}
+  class:pet-sprite--mood-hungry={idle && mood === 'hungry'}
+  class:pet-sprite--mood-sad={idle && mood === 'sad'}
   class:pet-sprite--bounce={bounce}
-  viewBox="0 0 12 12"
+  viewBox={`0 0 ${SPRITE_SIZE} ${SPRITE_SIZE}`}
   width={size}
   height={size}
   role={label ? 'img' : 'presentation'}
@@ -40,10 +45,37 @@
 <style>
   .pet-sprite {
     display: block;
+    transform-origin: 50% 100%;
   }
 
   .pet-sprite--idle {
     animation: pet-idle 3.4s ease-in-out infinite;
+  }
+
+  .pet-sprite--mood-happy {
+    animation: pet-happy 2.4s ease-in-out infinite;
+  }
+
+  .pet-sprite--mood-content {
+    animation: pet-idle 3.4s ease-in-out infinite;
+  }
+
+  .pet-sprite--mood-hungry {
+    animation: pet-hungry 4.2s ease-in-out infinite;
+  }
+
+  .pet-sprite--mood-sad {
+    animation: pet-sad 5.2s ease-in-out infinite;
+  }
+
+  @keyframes pet-happy {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
   }
 
   @keyframes pet-idle {
@@ -53,6 +85,26 @@
     }
     50% {
       transform: translateY(-3px);
+    }
+  }
+
+  @keyframes pet-hungry {
+    0%,
+    100% {
+      transform: translateY(2px) rotate(-1.4deg);
+    }
+    50% {
+      transform: translateY(4px) rotate(1.4deg);
+    }
+  }
+
+  @keyframes pet-sad {
+    0%,
+    100% {
+      transform: translateY(5px) scaleY(0.97);
+    }
+    50% {
+      transform: translateY(6px) scaleY(0.95);
     }
   }
 

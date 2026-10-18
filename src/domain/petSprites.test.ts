@@ -56,6 +56,21 @@ describe('pet sprites', () => {
       const palette = SPECIES_PALETTES[species]
       expect(palette.body).toMatch(/^#[0-9a-f]{6}$/i)
       expect(palette.shade).toMatch(/^#[0-9a-f]{6}$/i)
+      expect(palette.light).toMatch(/^#[0-9a-f]{6}$/i)
     }
+  })
+
+  it('draws a distinct silhouette for every species', () => {
+    const grids = PET_SPECIES.map((species) => PET_SPRITES[species].join('\n'))
+    expect(new Set(grids).size).toBe(PET_SPECIES.length)
+  })
+
+  it('gives every species a defining feature', () => {
+    expect(PET_SPRITES.bunny.slice(0, 4).join('')).toContain('p')
+    expect(PET_SPRITES.fox.slice(0, 3).join('')).toContain('d')
+    expect(PET_SPRITES.panda.slice(1, 3).join('')).toContain('k')
+    expect(PET_SPRITES.dolphin.slice(0, 3).join('')).toContain('o')
+    expect(PET_SPRITES.cat[8]).toContain('k')
+    expect(PET_SPRITES.dog.join('')).toContain('h')
   })
 })
