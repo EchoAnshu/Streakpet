@@ -67,6 +67,14 @@ src/
 | 8     | PWA and offline verification       |
 | 9     | Final testing and release          |
 
+## Known limitations (MVP)
+
+- Data lives in a single browser profile. Clearing site data removes it, and nothing is synchronized between devices.
+- There is no data export or import yet.
+- Streak calculations use each habit's current schedule for past days, so editing a schedule can change historical streaks.
+- History shows each habit's latest name and archived status, not the name it had on the completion date.
+- Installation and offline loading vary by browser and only work after the app has loaded online at least once.
+
 ## Data and privacy
 
 Habits and completion records are stored only in the current browser profile using IndexedDB. Data is not synchronized between devices, and clearing browser site data removes it.

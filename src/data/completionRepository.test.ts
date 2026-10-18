@@ -163,6 +163,17 @@ describe('revertCompletion', () => {
   })
 })
 
+describe('persistence across reloads', () => {
+  it('keeps completions and rewards after closing and reopening the database', async () => {
+    await saveHabit(makeHabit('a', [6]))
+    await applyCompletion(makeCompletion('a'))
+    await closeDatabase()
+
+    expect(await listCompletions()).toHaveLength(1)
+    expect(totalXpFromRewards(await listRewards())).toBe(15)
+  })
+})
+
 describe('recalculateDailyBonus', () => {
   it('awards the bonus when archiving removes the last incomplete habit', async () => {
     await saveHabit(makeHabit('a', [6]))
