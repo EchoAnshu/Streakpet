@@ -11,6 +11,7 @@ A lightweight, offline-first habit tracker with a virtual pet, built as a Progre
 - A pixel-art pet you adopt and name. Completions earn treats; feeding treats restores hunger and grows the pet from baby to teen to adult. Hunger drops a little each day, so the pet gets hungry between visits but never dies.
 - In-app reminder toasts while the app is open, plus system notifications when permission is granted.
 - Light, dark, and system themes with a no-flash startup.
+- JSON backup export and restore from the Settings screen.
 - A history view listing completed habits by day, including archived ones.
 - Local-only data storage using IndexedDB. No account, backend, or network connection required for core features.
 
@@ -72,8 +73,7 @@ src/
 
 ## Known limitations (MVP)
 
-- Data lives in a single browser profile. Clearing site data removes it, and nothing is synchronized between devices.
-- There is no data export or import yet.
+- Data lives in a single browser profile. Clearing site data removes it, and nothing is synchronized between devices; use the JSON backup export to move data manually.
 - Streak calculations use each habit's current schedule for past days, so editing a schedule can change historical streaks.
 - History shows each habit's latest name and archived status, not the name it had on the completion date.
 - Installation and offline loading vary by browser and only work after the app has loaded online at least once.

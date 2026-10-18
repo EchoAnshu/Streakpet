@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { exportBackup, importBackup } from '../data/backupRepository'
+  import { parseBackup, type BackupData } from '../domain/backup'
   import { THEME_LABELS, THEME_PREFERENCES } from '../domain/theme'
+  import { downloadBackupFile } from '../lib/backupFile'
   import { playComplete } from '../lib/sound'
   import * as settingsStore from '../stores/settings.svelte'
 
@@ -7,6 +10,10 @@
   let permission = $state<NotificationPermission | 'unsupported'>(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
   )
+  let fileInput: HTMLInputElement
+  let pendingImport = $state<BackupData | null>(null)
+  let statusMessage = $state('')
+  let statusIsError = $state(false)
 
   async function requestPermission() {
     if (typeof Notification === 'undefined') return
@@ -18,6 +25,51 @@
     const nextMuted = !input.checked
     settingsStore.setMuted(nextMuted)
     if (!nextMuted) playComplete()
+  }
+
+  function setStatus(message: string, isError = false) {
+    statusMessage = message
+    statusIsError = isError
+  }
+
+  async function handleExport() {
+    try {
+      const data = await exportBackup()
+      downloadBackupFile(data)
+      setStatus('Backup downloaded.')
+    } catch {
+      setStatus('Could not create a backup in this browser.', true)
+    }
+  }
+
+  async function handleFileChange(event: Event) {
+    const input = event.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    try {
+      const text = await file.text()
+      pendingImport = parseBackup(text)
+      setStatus('')
+    } catch (error) {
+      pendingImport = null
+      setStatus(error instanceof Error ? error.message : 'Could not read that file.', true)
+    }
+  }
+
+  async function confirmImport() {
+    if (!pendingImport) return
+    try {
+      await importBackup(pendingImport)
+      location.reload()
+    } catch {
+      pendingImport = null
+      setStatus('Import failed. Your existing data was not changed.', true)
+    }
+  }
+
+  function cancelImport() {
+    pendingImport = null
   }
 </script>
 
@@ -98,8 +150,58 @@
       network connection, or tracking is required.
     </p>
     <p class="settings-view__note">
-      Export and import will arrive in later updates.
+      Back up your data to a JSON file, or restore from a previous backup. Importing replaces all
+      current data.
     </p>
+    <div class="settings-view__actions">
+      <button type="button" class="button button--ghost button--small" onclick={handleExport}>
+        Export backup
+      </button>
+      <button
+        type="button"
+        class="button button--ghost button--small"
+        onclick={() => fileInput.click()}
+      >
+        Import backup
+      </button>
+    </div>
+    <input
+      bind:this={fileInput}
+      type="file"
+      accept=".json,application/json"
+      class="sr-only"
+      tabindex="-1"
+      aria-hidden="true"
+      onchange={handleFileChange}
+    />
+    {#if pendingImport}
+      <div class="settings-view__confirm" role="alertdialog" aria-label="Confirm import">
+        <p>
+          Replace all current data with this backup ({pendingImport.habits.length}
+          {pendingImport.habits.length === 1 ? 'habit' : 'habits'},
+          {pendingImport.completions.length}
+          {pendingImport.completions.length === 1 ? 'completion' : 'completions'})? This cannot be
+          undone.
+        </p>
+        <div class="settings-view__confirm-actions">
+          <button type="button" class="button button--primary button--small" onclick={confirmImport}>
+            Replace data
+          </button>
+          <button type="button" class="button button--ghost button--small" onclick={cancelImport}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    {/if}
+    {#if statusMessage}
+      <p
+        class="settings-view__status"
+        class:settings-view__status--error={statusIsError}
+        aria-live="polite"
+      >
+        {statusMessage}
+      </p>
+    {/if}
   </section>
 </div>
 
@@ -118,6 +220,37 @@
 
   .settings-view__button {
     margin-top: var(--space-3);
+  }
+
+  .settings-view__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+
+  .settings-view__confirm {
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-button);
+    background: var(--color-primary-soft);
+  }
+
+  .settings-view__confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .settings-view__status {
+    margin-top: var(--space-3);
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .settings-view__status--error {
+    color: var(--color-danger);
   }
 
   .settings-segments {
