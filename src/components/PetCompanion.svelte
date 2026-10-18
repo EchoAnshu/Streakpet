@@ -25,6 +25,8 @@
     return value && isPetSpecies(value) ? value : null
   })
   let petName = $derived(petStore.getPetName())
+  let stage = $derived(petStore.getStage())
+  let spriteSize = $derived(stage === 'baby' ? 72 : stage === 'teen' ? 80 : 88)
   let treats = $derived(petStore.getTreats())
   let feedCheck = $derived(petStore.getFeedCheck())
 
@@ -66,7 +68,7 @@
   <div class="pet-companion card">
     <button type="button" class="pet-companion__open" onclick={onOpenPet}>
       <span class="pet-companion__sprite">
-        <PetSprite {species} size={76} idle {mood} bounce={bouncing} />
+        <PetSprite {species} size={spriteSize} idle {mood} bounce={bouncing} />
       </span>
       <span class="pet-companion__body">
         <span class="pet-companion__name">{petName ?? SPECIES_LABELS[species]}</span>

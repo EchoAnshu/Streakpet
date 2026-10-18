@@ -3,6 +3,7 @@
   import PetSprite from '../components/PetSprite.svelte'
   import {
     FEED_HUNGER_RESTORE,
+    FEED_XP,
     MOOD_LABELS,
     PET_SPECIES,
     SPECIES_LABELS,
@@ -250,6 +251,9 @@
       {#if !feedCheck.ok && feedCheck.reason}
         <p class="pet-card__feed-note">{feedCheck.reason}</p>
       {/if}
+      <p class="pet-card__feed-note">
+        Each feeding spends 1 treat and gives +{FEED_XP} XP.
+      </p>
     </section>
 
     <section class="card">
@@ -269,12 +273,14 @@
           ></div>
         </div>
         <p class="pet-card__meter-hint">
-          {progress.earned} / {progress.goal} XP to {STAGE_LABELS[progress.nextStage]}
+          {progress.earned} / {progress.goal} XP — about {Math.ceil((progress.goal - progress.earned) / FEED_XP)} more
+          {Math.ceil((progress.goal - progress.earned) / FEED_XP) === 1 ? 'feeding' : 'feedings'} to
+          {STAGE_LABELS[progress.nextStage]}
         </p>
       {:else}
         <p class="pet-card__meter-hint">Fully grown</p>
       {/if}
-      <p class="pet-card__meter-hint">{xp} XP total from habits and feedings.</p>
+      <p class="pet-card__meter-hint">{xp} XP earned so far.</p>
     </section>
 
     <section class="card">
