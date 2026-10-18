@@ -2,6 +2,15 @@
   import { playComplete } from '../lib/sound'
   import * as settingsStore from '../stores/settings.svelte'
 
+  let permission = $state<NotificationPermission | 'unsupported'>(
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  )
+
+  async function requestPermission() {
+    if (typeof Notification === 'undefined') return
+    permission = await Notification.requestPermission()
+  }
+
   function handleMutedChange(event: Event) {
     const input = event.currentTarget as HTMLInputElement
     const nextMuted = !input.checked
@@ -30,9 +39,28 @@
 
   <section class="card">
     <h2>Reminders</h2>
-    <p class="settings-view__note">
-      Habit reminders ring while the app is open. System notifications arrive in a later update.
-    </p>
+    {#if permission === 'unsupported'}
+      <p class="settings-view__note">
+        System notifications are not available in this browser. Habit reminders will still ring
+        inside the app while it is open.
+      </p>
+    {:else if permission === 'granted'}
+      <p class="settings-view__note">
+        Notifications are enabled. Habit reminders appear while the app is open.
+      </p>
+    {:else if permission === 'denied'}
+      <p class="settings-view__note">
+        Notifications are blocked in your browser settings. In-app reminders still work while the
+        app is open.
+      </p>
+    {:else}
+      <p class="settings-view__note">
+        Get a system notification when a habit reminder is due while the app is open.
+      </p>
+      <button type="button" class="button button--primary settings-view__button" onclick={requestPermission}>
+        Enable notifications
+      </button>
+    {/if}
   </section>
 
   <section class="card">
@@ -66,6 +94,10 @@
     color: var(--color-muted);
     font-size: 0.875rem;
     margin-top: var(--space-2);
+  }
+
+  .settings-view__button {
+    margin-top: var(--space-3);
   }
 
   .settings-toggle {

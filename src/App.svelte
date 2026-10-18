@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import AppHeader from './components/AppHeader.svelte'
   import AppNavigation, { type ViewId } from './components/AppNavigation.svelte'
+  import Toasts from './components/Toasts.svelte'
   import HistoryView from './views/HistoryView.svelte'
   import PetView from './views/PetView.svelte'
   import SettingsView from './views/SettingsView.svelte'
   import TodayView from './views/TodayView.svelte'
   import { formatDisplayDate } from './domain/dates'
+  import { startReminderWatch } from './lib/reminders'
   import { loadCompletions } from './stores/completions.svelte'
   import { loadHabits } from './stores/habits.svelte'
   import { loadPet } from './stores/pet.svelte'
@@ -23,6 +26,8 @@
   loadHabits()
   loadCompletions()
   loadPet()
+
+  onMount(() => startReminderWatch())
 </script>
 
 <div class="app-shell">
@@ -38,6 +43,7 @@
       <SettingsView />
     {/if}
   </main>
+  <Toasts />
   <AppNavigation current={view} onNavigate={(next) => (view = next)} />
 </div>
 
