@@ -3,6 +3,7 @@ import { formatDateKey, getLocalDateKey } from './dates'
 
 export interface HistoryEntry {
   id: string
+  habitId: string
   name: string
   archived: boolean
   completedAt: number
@@ -29,6 +30,7 @@ export function groupCompletionsByDate(
     const habit = habitById.get(completion.habitId)
     day.entries.push({
       id: completion.id,
+      habitId: completion.habitId,
       name: habit?.name ?? 'Unknown habit',
       archived: habit?.archived ?? false,
       completedAt: completion.completedAt,
