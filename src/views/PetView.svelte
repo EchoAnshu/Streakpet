@@ -179,6 +179,7 @@
           size={stage === 'baby' ? 120 : stage === 'teen' ? 152 : 184}
           label={`${SPECIES_LABELS[species]} at the ${STAGE_LABELS[stage].toLowerCase()} stage`}
           bounce={bouncing}
+          idle
         />
       </div>
 

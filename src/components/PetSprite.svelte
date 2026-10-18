@@ -7,15 +7,17 @@
     size?: number
     label?: string
     bounce?: boolean
+    idle?: boolean
   }
 
-  let { species, size = 128, label, bounce = false }: Props = $props()
+  let { species, size = 128, label, bounce = false, idle = false }: Props = $props()
 
   let rows = $derived(PET_SPRITES[species])
 </script>
 
 <svg
   class="pet-sprite"
+  class:pet-sprite--idle={idle}
   class:pet-sprite--bounce={bounce}
   viewBox="0 0 12 12"
   width={size}
@@ -38,6 +40,20 @@
 <style>
   .pet-sprite {
     display: block;
+  }
+
+  .pet-sprite--idle {
+    animation: pet-idle 3.4s ease-in-out infinite;
+  }
+
+  @keyframes pet-idle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
   }
 
   .pet-sprite--bounce {

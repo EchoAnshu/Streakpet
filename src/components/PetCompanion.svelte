@@ -9,7 +9,9 @@
     petAgeInDays,
     type PetSpecies,
   } from '../domain/pet'
+  import { playFeed } from '../lib/sound'
   import * as petStore from '../stores/pet.svelte'
+  import { pushToast } from '../stores/toasts.svelte'
 
   interface Props {
     onOpenPet: () => void
@@ -24,6 +26,7 @@
   })
   let petName = $derived(petStore.getPetName())
   let treats = $derived(petStore.getTreats())
+  let feedCheck = $derived(petStore.getFeedCheck())
 
   let nowTick = $state(Date.now())
   let createdAt = $derived(petStore.getCreatedAt())
@@ -32,35 +35,69 @@
   let mood = $derived(moodForHunger(hunger))
   let hungerColor = $derived(hunger >= 70 ? '#2f9e63' : hunger >= 40 ? '#f5a524' : '#d64545')
 
+  let busy = $state(false)
+  let bouncing = $state(false)
+
   onMount(() => {
     const interval = window.setInterval(() => (nowTick = Date.now()), 60_000)
     return () => window.clearInterval(interval)
   })
+
+  async function feed() {
+    if (busy || !feedCheck.ok) return
+    busy = true
+    try {
+      await petStore.feed()
+      playFeed()
+      bouncing = true
+      window.setTimeout(() => (bouncing = false), 550)
+    } catch (error) {
+      pushToast(
+        'Could not feed your pet',
+        error instanceof Error ? error.message : 'Try again in a moment.'
+      )
+    } finally {
+      busy = false
+    }
+  }
 </script>
 
 {#if adopted && species}
-  <button type="button" class="pet-companion card" onclick={onOpenPet}>
-    <span class="pet-companion__sprite">
-      <PetSprite {species} size={76} />
-    </span>
-    <span class="pet-companion__body">
-      <span class="pet-companion__name">{petName ?? SPECIES_LABELS[species]}</span>
-      <span class="pet-companion__meta">
-        {ageInDays} {ageInDays === 1 ? 'day' : 'days'} old · {MOOD_LABELS[mood]} · {treats}
-        {treats === 1 ? 'treat' : 'treats'}
+  <div class="pet-companion card">
+    <button type="button" class="pet-companion__open" onclick={onOpenPet}>
+      <span class="pet-companion__sprite">
+        <PetSprite {species} size={76} idle bounce={bouncing} />
       </span>
-      <span class="pet-companion__meter">
-        <span class="pet-companion__meter-track">
-          <span
-            class="pet-companion__meter-fill"
-            style={`width:${hunger}%;background:${hungerColor}`}
-          ></span>
+      <span class="pet-companion__body">
+        <span class="pet-companion__name">{petName ?? SPECIES_LABELS[species]}</span>
+        <span class="pet-companion__meta">
+          {ageInDays} {ageInDays === 1 ? 'day' : 'days'} old · {MOOD_LABELS[mood]} · {treats}
+          {treats === 1 ? 'treat' : 'treats'}
         </span>
-        <span class="pet-companion__meter-value">{hunger}</span>
+        <span class="pet-companion__meter">
+          <span class="pet-companion__meter-track">
+            <span
+              class="pet-companion__meter-fill"
+              style={`width:${hunger}%;background:${hungerColor}`}
+            ></span>
+          </span>
+          <span class="pet-companion__meter-value">{hunger}</span>
+        </span>
       </span>
-    </span>
-    <span class="pet-companion__arrow" aria-hidden="true">›</span>
-  </button>
+    </button>
+    {#if feedCheck.ok}
+      <button
+        type="button"
+        class="button button--primary button--small pet-companion__feed"
+        disabled={busy}
+        onclick={feed}
+      >
+        {busy ? 'Feeding…' : 'Feed'}
+      </button>
+    {:else}
+      <span class="pet-companion__arrow" aria-hidden="true">›</span>
+    {/if}
+  </div>
 {:else}
   <button type="button" class="pet-companion pet-companion--empty card" onclick={onOpenPet}>
     <span class="pet-companion__sprite">
@@ -89,6 +126,25 @@
 
   .pet-companion:hover {
     border-color: var(--color-border-strong);
+  }
+
+  .pet-companion__open {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pet-companion__feed {
+    flex-shrink: 0;
   }
 
   .pet-companion__sprite {
