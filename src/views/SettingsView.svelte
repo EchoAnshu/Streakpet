@@ -141,6 +141,29 @@
       StreakPet is a lightweight, offline-first habit tracker with a virtual pet. This is an early
       development build.
     </p>
+    <p class="settings-view__madeby">
+      Made with ♥ by
+      <a
+        class="settings-view__link"
+        href="https://github.com/EchoAnshu/Streakpet"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        echoanshu
+      </a>
+      · released under the MIT license
+    </p>
+    <!-- TODO: replace with the real Buy Me a Coffee URL -->
+    <div class="settings-view__actions">
+      <a
+        class="button button--ghost button--small"
+        href="https://buymeacoffee.com/echoanshu"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        ☕ Buy me a coffee
+      </a>
+    </div>
   </section>
 
   <section class="card">
@@ -220,6 +243,19 @@
 
   .settings-view__button {
     margin-top: var(--space-3);
+  }
+
+  .settings-view__madeby {
+    margin-top: var(--space-3);
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .settings-view__link {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .settings-view__actions {

@@ -89,3 +89,17 @@ src/
 ## Data and privacy
 
 Habits and completion records are stored only in the current browser profile using IndexedDB. Data is not synchronized between devices, and clearing browser site data removes it.
+
+## Open source
+
+StreakPet is free and open-source software released under the [MIT license](LICENSE). Contributions and forks are welcome — all you need is Node.js:
+
+```bash
+git clone https://github.com/EchoAnshu/Streakpet
+cd Streakpet
+npm install
+npm run dev
+```
+
+- **Author:** [echoanshu](https://github.com/EchoAnshu)
+- **Support the project:** <!-- TODO: replace with the real Buy Me a Coffee URL --> [Buy me a coffee](https://buymeacoffee.com/echoanshu)
