@@ -9,6 +9,7 @@
   import TodayView from './views/TodayView.svelte'
   import { formatDisplayDate } from './domain/dates'
   import { startReminderWatch } from './lib/reminders'
+  import { applyDevSeed } from './lib/devSeed'
   import { applyDevTimeShift } from './lib/devTimeShift'
   import { loadCompletions } from './stores/completions.svelte'
   import { loadHabits } from './stores/habits.svelte'
@@ -25,8 +26,10 @@
   let subtitle = $derived(view === 'today' ? formatDisplayDate(new Date()) : undefined)
 
   loadHabits()
-  loadCompletions()
-  void applyDevTimeShift().then(() => loadPet())
+  void applyDevTimeShift()
+    .then(applyDevSeed)
+    .then(() => loadCompletions(true))
+    .then(() => loadPet(true))
 
   onMount(() => startReminderWatch())
 </script>
