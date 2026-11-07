@@ -102,4 +102,5 @@ npm run dev
 ```
 
 - **Author:** [echoanshu](https://github.com/EchoAnshu)
-- **Support the project:** <!-- TODO: replace with the real Buy Me a Coffee URL --> [Buy me a coffee](https://buymeacoffee.com/echoanshu)
+- **Support the project:** [Buy me a coffee](https://buymeacoffee.com/semicolonerror)
+

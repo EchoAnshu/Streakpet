@@ -153,11 +153,10 @@
       </a>
       · released under the MIT license
     </p>
-    <!-- TODO: replace with the real Buy Me a Coffee URL -->
     <div class="settings-view__actions">
       <a
         class="button button--ghost button--small"
-        href="https://buymeacoffee.com/echoanshu"
+        href="https://buymeacoffee.com/semicolonerror"
         target="_blank"
         rel="noopener noreferrer"
       >
