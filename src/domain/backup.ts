@@ -11,7 +11,7 @@ export interface BackupData {
   habits: Habit[]
   completions: Completion[]
   pet: Pet | null
-  feedings: Feeding[]
+  feedings?: Feeding[]
 }
 
 function fail(message: string): never {
@@ -122,18 +122,46 @@ function parsePet(value: unknown): Pet | null {
   if (value.name !== null && !isString(value.name)) {
     fail('The pet in the backup has an invalid name.')
   }
-  if (!isNumber(value.xp) || !isNumber(value.treats) || !isNumber(value.hunger)) {
-    fail('The pet in the backup has invalid numbers.')
-  }
+
+  const xp = isNumber(value.xp) ? Math.max(0, value.xp) : 0
+  // Backups made before the cookie system carry a treat count; it migrates
+  // into the cookie inventory with the single shared weekly cycle.
+  const treats = isNumber(value.treats) ? Math.max(0, value.treats) : 0
+  const cookies =
+    isNumber(value.cookies) && value.cookies >= 0 ? Math.floor(value.cookies) : Math.min(2, treats)
+  const species = value.species as string | null
+  const status =
+    value.petStatus === 'hungry' || value.petStatus === 'gone'
+      ? value.petStatus
+      : species !== null
+        ? 'healthy'
+        : 'gone'
+
+  // Persisted cookies always ride the weekly cycle: an unearned timestamp
+  // (only possible from ancient backups) starts it at import time.
+  const migratingCookies = !isNumber(value.cookies) && cookies > 0
+  const spendDates = Array.isArray(value.cookieSpendDates)
+    ? value.cookieSpendDates.filter(isString)
+    : undefined
+  const milestoneDates = Array.isArray(value.cookieMilestoneDates)
+    ? value.cookieMilestoneDates.filter(isString)
+    : undefined
+
   return {
     id: 'pet',
-    species: value.species as string | null,
+    species,
     name: value.name as string | null,
-    xp: value.xp as number,
-    treats: value.treats as number,
-    hunger: value.hunger as number,
-    lastHungerAt: isNumber(value.lastHungerAt) ? value.lastHungerAt : Date.now(),
+    xp,
     createdAt: isNumber(value.createdAt) ? value.createdAt : Date.now(),
+    cookies,
+    ...(isNumber(value.cookieEarnerAt) ? { cookieEarnerAt: value.cookieEarnerAt } : migratingCookies ? { cookieEarnerAt: Date.now() } : {}),
+    ...(spendDates ? { cookieSpendDates: spendDates } : {}),
+    ...(milestoneDates ? { cookieMilestoneDates: milestoneDates } : {}),
+    ...(isString(value.streakAnchorDate) ? { streakAnchorDate: value.streakAnchorDate } : {}),
+    currentStreak: isNumber(value.currentStreak) ? value.currentStreak : 0,
+    activeDays: isNumber(value.activeDays) ? value.activeDays : 0,
+    longestStreak: isNumber(value.longestStreak) ? value.longestStreak : 0,
+    petStatus: status as Pet['petStatus'],
   }
 }
 

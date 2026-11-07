@@ -1,15 +1,14 @@
-import type { Pet } from '../types/models'
-import { adoptPet, feedPet, getPet as loadPetFromDb } from '../data/petRepository'
+import type { Pet, PetStatus } from '../types/models'
+import { adoptPet, getPet as loadPetFromDb } from '../data/petRepository'
 import {
-  canFeed,
-  hungerAt,
-  moodForHunger,
+  cookieExpiryDate,
+  moodForStatus,
+  MOOD_LABELS,
+  petAgeInDays,
   stageForXp,
   stageProgress,
-  type FeedCheck,
-  type PetMood,
-  type PetStage,
-  type StageProgress,
+  STAGE_LABELS,
+  STATUS_LABELS,
 } from '../domain/pet'
 
 let pet = $state<Pet | null>(null)
@@ -53,34 +52,62 @@ export function getXp(): number {
   return pet?.xp ?? 0
 }
 
-export function getTreats(): number {
-  return pet?.treats ?? 0
+export function getCookies(): number {
+  return pet?.cookies ?? 0
+}
+
+export function getCookieExpiry(): number | null {
+  return pet ? cookieExpiryDate(pet) : null
+}
+
+export function getCurrentStreak(): number {
+  return pet?.currentStreak ?? 0
+}
+
+export function getActiveDays(): number {
+  return pet?.activeDays ?? 0
+}
+
+export function getLongestStreak(): number {
+  return pet?.longestStreak ?? 0
+}
+
+export function getPetStatus(): PetStatus {
+  return pet?.petStatus ?? 'healthy'
+}
+
+export function getStatusLabel(): string {
+  return STATUS_LABELS[getPetStatus()]
+}
+
+export function getMoodLabel(): string {
+  return MOOD_LABELS[moodForStatus(getPetStatus())]
+}
+
+export function getRunAwayNote(): string | null {
+  if (!pet || pet.species) return null
+  return typeof pet.lastRunAwayAt === 'number'
+    ? 'Your pet ran away and the streak broke. Finish habits to start a new run!'
+    : null
 }
 
 export function getCreatedAt(): number | null {
   return pet?.createdAt ?? null
 }
 
-export function getHunger(now: number = Date.now()): number {
-  if (!pet) return 100
-  return hungerAt(pet.hunger, pet.lastHungerAt, now)
+export function getStageLabel(): string {
+  return STAGE_LABELS[stageForXp(getXp())]
 }
 
-export function getMood(): PetMood {
-  return moodForHunger(getHunger())
+export function getAgeInDays(nowTick: number): number {
+  const createdAt = pet?.createdAt
+  return createdAt === undefined ? 0 : petAgeInDays(createdAt, nowTick)
 }
 
-export function getStage(): PetStage {
-  return stageForXp(getXp())
-}
-
-export function getProgress(): StageProgress {
+export function getProgress():
+  | ReturnType<typeof stageProgress>
+  | undefined {
   return stageProgress(getXp())
-}
-
-export function getFeedCheck(): FeedCheck {
-  if (!pet) return { ok: false, reason: 'Adopt a pet first.' }
-  return canFeed(pet, Date.now())
 }
 
 export async function loadPet(force = false): Promise<void> {
@@ -103,9 +130,4 @@ export async function adopt(species: string, name: string | null): Promise<void>
 
 export async function switchPet(species: string, name: string | null): Promise<void> {
   pet = await adoptPet(species, name, { freshStart: true })
-}
-
-export async function feed(): Promise<void> {
-  const { pet: fed } = await feedPet()
-  pet = fed
 }

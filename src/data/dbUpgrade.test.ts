@@ -130,7 +130,7 @@ describe('database upgrade to version 3', () => {
 
     const pet = await getPet()
     expect(pet.xp).toBe(0)
-    expect(pet.treats).toBe(0)
+    expect(pet.cookies).toBe(0)
     expect(pet.species).toBeNull()
   })
 
@@ -171,7 +171,7 @@ describe('database upgrade to version 3', () => {
 
     const pet = await getPet()
     expect(pet.xp).toBe(15)
-    expect(pet.treats).toBe(0)
+    expect(pet.cookies).toBe(0)
     expect(await rawRewards()).toHaveLength(3)
   })
 
@@ -207,7 +207,7 @@ describe('database upgrade to version 3', () => {
       completedAt: 4000,
     })
 
-    expect(pet.xp).toBe(5)
-    expect(pet.treats).toBe(1)
+    expect(pet.xp).toBe(15)
+    expect(pet.cookies).toBe(0)
   })
 })

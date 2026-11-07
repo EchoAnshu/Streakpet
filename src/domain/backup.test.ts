@@ -38,10 +38,16 @@ function makeBackup(): BackupData {
       species: 'fox',
       name: 'Rusty',
       xp: 120,
-      treats: 3,
-      hunger: 72.5,
-      lastHungerAt: 900,
       createdAt: 400,
+      cookies: 2,
+      cookieEarnerAt: 350,
+      cookieSpendDates: ['2026-10-16'],
+      cookieMilestoneDates: ['2026-10-15'],
+      currentStreak: 4,
+      activeDays: 9,
+      longestStreak: 4,
+      petStatus: 'hungry',
+      streakAnchorDate: '2026-10-13',
     },
     feedings: [{ id: 'f1', at: 600, xp: 10, hungerBefore: 52, hungerAfter: 72 }],
   }
@@ -63,6 +69,32 @@ describe('backup serialization', () => {
     const parsed = parseBackup(serializeBackup(original))
     expect(parsed.pet).toBeNull()
     expect(parsed.feedings).toEqual([])
+  })
+
+  it('migrates a treat-era pet into the cookie model', () => {
+    const data = {
+      ...makeBackup(),
+      feedings: [],
+      pet: {
+        id: 'pet',
+        species: 'fox',
+        name: 'Rusty',
+        xp: 120,
+        treats: 3,
+        hunger: 72.5,
+        lastHungerAt: 900,
+        createdAt: 400,
+      },
+    } as unknown as BackupData
+    const parsed = parseBackup(serializeBackup(data))
+    expect(parsed.pet).not.toBeNull()
+    expect(parsed.pet?.cookies).toBe(2)
+    expect(parsed.pet?.species).toBe('fox')
+    expect(typeof parsed.pet?.cookieEarnerAt).toBe('number')
+    expect(parsed.pet?.currentStreak).toBe(0)
+    expect(parsed.pet?.petStatus).toBe('healthy')
+    expect(parsed.pet).not.toHaveProperty('hunger')
+    expect(parsed.pet).not.toHaveProperty('treats')
   })
 })
 

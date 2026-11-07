@@ -9,6 +9,7 @@
   import TodayView from './views/TodayView.svelte'
   import { formatDisplayDate } from './domain/dates'
   import { startReminderWatch } from './lib/reminders'
+  import { applyDevTimeShift } from './lib/devTimeShift'
   import { loadCompletions } from './stores/completions.svelte'
   import { loadHabits } from './stores/habits.svelte'
   import { loadPet } from './stores/pet.svelte'
@@ -25,7 +26,7 @@
 
   loadHabits()
   loadCompletions()
-  loadPet()
+  void applyDevTimeShift().then(() => loadPet())
 
   onMount(() => startReminderWatch())
 </script>

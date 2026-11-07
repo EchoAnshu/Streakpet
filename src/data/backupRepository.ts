@@ -1,7 +1,6 @@
 import { openDatabase, requestToPromise, transactionDone } from './db'
 import { listCompletions } from './completionRepository'
 import { listHabits } from './habitRepository'
-import { listFeedings } from './petRepository'
 import type { BackupData } from '../domain/backup'
 import { BACKUP_APP, BACKUP_VERSION } from '../domain/backup'
 import type { Pet } from '../types/models'
@@ -17,11 +16,12 @@ async function readPet(): Promise<Pet | null> {
   return pet ?? null
 }
 
+// Feedings belong to the retired treat model; old backups keep importing them
+// but new exports no longer carry them.
 export async function exportBackup(): Promise<BackupData> {
-  const [habits, completions, feedings, pet] = await Promise.all([
+  const [habits, completions, pet] = await Promise.all([
     listHabits(),
     listCompletions(),
-    listFeedings(),
     readPet(),
   ])
   return {
@@ -31,7 +31,6 @@ export async function exportBackup(): Promise<BackupData> {
     habits,
     completions,
     pet,
-    feedings,
   }
 }
 
@@ -50,7 +49,7 @@ export async function importBackup(data: BackupData): Promise<void> {
 
   for (const habit of data.habits) habitsStore.put(habit)
   for (const completion of data.completions) completionsStore.put(completion)
-  for (const feeding of data.feedings) feedingsStore.put(feeding)
+  for (const feeding of data.feedings ?? []) feedingsStore.put(feeding)
   if (data.pet) petStore.put(data.pet)
 
   await transactionDone(transaction)

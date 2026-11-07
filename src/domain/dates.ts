@@ -26,3 +26,18 @@ export function formatDateKey(dateKey: string): string {
 export function getWeekdayIndex(date: Date = new Date()): number {
   return date.getDay()
 }
+
+export function addDaysToKey(dateKey: string, days: number): string {
+  const date = parseDateKey(dateKey)
+  date.setDate(date.getDate() + days)
+  return getLocalDateKey(date)
+}
+
+export function compareDateKeys(a: string, b: string): number {
+  return Date.parse(`${a}T00:00:00`) - Date.parse(`${b}T00:00:00`)
+}
+
+/** Whole calendar days from a to b (b-a); DST shifts round to the true day count. */
+export function daysBetweenKeys(a: string, b: string): number {
+  return Math.round((Date.parse(`${b}T00:00:00`) - Date.parse(`${a}T00:00:00`)) / (24 * 60 * 60 * 1000))
+}

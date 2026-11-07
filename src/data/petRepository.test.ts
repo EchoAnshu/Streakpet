@@ -1,14 +1,14 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { Completion, Habit, Pet } from '../types/models'
-import { hungerAt } from '../domain/pet'
-import { applyCompletion, listCompletions } from './completionRepository'
+import type { Habit, Pet } from '../types/models'
+import { addDaysToKey, getLocalDateKey } from '../domain/dates'
 import { closeDatabase, openDatabase, requestToPromise, transactionDone } from './db'
-import { adoptPet, feedPet, getPet, listFeedings } from './petRepository'
+import { adoptPet, getPet } from './petRepository'
 import { saveHabit } from './habitRepository'
+import { applyCompletion, revertCompletion } from './completionRepository'
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const DATE_KEY = '2026-10-17'
+const TODAY_KEY = getLocalDateKey(new Date())
+const YESTERDAY_KEY = addDaysToKey(TODAY_KEY, -1)
 
 function makeHabit(id: string, scheduledDays: number[]): Habit {
   const now = Date.now()
@@ -51,18 +51,29 @@ beforeEach(async () => {
 describe('getPet', () => {
   it('creates a default unadopted pet once', async () => {
     const pet = await getPet()
-    expect(pet).toEqual({
-      id: 'pet',
-      species: null,
-      name: null,
-      xp: 0,
-      treats: 0,
-      hunger: 100,
-      lastHungerAt: expect.any(Number),
-      createdAt: expect.any(Number),
-    })
+    expect(pet.species).toBeNull()
+    expect(pet.cookies).toBe(0)
+    expect(pet.petStatus).toBe('gone')
+    expect(pet.streakAnchorDate).toEqual(expect.any(String))
+    expect(typeof pet.createdAt).toBe('number')
 
     expect(await getPet()).toEqual(pet)
+  })
+
+  it('migrates a stored treat-era pet into the cookie model', async () => {
+    await getPet()
+    await setPetFields({
+      treats: 2,
+      treatLots: [{ at: Date.now() - 1000, count: 1 }],
+      hunger: 30,
+      lastHungerAt: Date.now() - 5000,
+    } as Partial<Pet>)
+    const pet = await getPet()
+    expect(pet.cookies).toBe(2)
+    expect(typeof pet.cookieEarnerAt).toBe('number')
+    expect(pet).not.toHaveProperty('treats')
+    expect(pet).not.toHaveProperty('hunger')
+    expect(pet).not.toHaveProperty('lastHungerAt')
   })
 })
 
@@ -79,107 +90,97 @@ describe('adoptPet', () => {
     expect(adopted.name).toBeNull()
   })
 
-  it('keeps accumulated XP and treats when adopting', async () => {
-    await setPetFields({ xp: 40, treats: 3 })
+  it('keeps cookies from previous lives but resets XP and the streak', async () => {
+    await setPetFields({ xp: 40, cookies: 2, longestStreak: 7 })
     const adopted = await adoptPet('dog', null)
-    expect(adopted.xp).toBe(40)
-    expect(adopted.treats).toBe(3)
-  })
-
-  it('keeps the adoption date when re-adopting without a fresh start', async () => {
-    await setPetFields({ createdAt: 12345, hunger: 55 })
-    const adopted = await adoptPet('bunny', null)
-    expect(adopted.createdAt).toBe(12345)
-  })
-
-  it('starts fresh when switching pets: xp reset, full hunger, new age', async () => {
-    await adoptPet('cat', 'Miso')
-    await setPetFields({ xp: 250, treats: 5, hunger: 30, lastHungerAt: Date.now(), createdAt: 12345 })
-
-    const before = await getPet()
-    const switched = await adoptPet('panda', 'Boo', { freshStart: true })
-
-    expect(switched.species).toBe('panda')
-    expect(switched.name).toBe('Boo')
-    expect(switched.xp).toBe(0)
-    expect(switched.treats).toBe(before.treats)
-    expect(switched.hunger).toBe(100)
-    expect(switched.createdAt).toBeGreaterThan(before.createdAt)
-    expect((await getPet()).xp).toBe(0)
+    expect(adopted.cookies).toBe(2)
+    expect(adopted.xp).toBe(0)
+    expect(adopted.currentStreak).toBe(0)
+    expect(adopted.longestStreak).toBe(7)
+    expect(adopted.streakAnchorDate).toEqual(expect.any(String))
   })
 })
 
-describe('feedPet', () => {
-  it('requires an adopted pet', async () => {
-    await setPetFields({ treats: 2 })
-    await expect(feedPet()).rejects.toThrow('Adopt a pet first.')
-  })
-
-  it('requires at least one treat', async () => {
-    await adoptPet('cat', null)
-    await setPetFields({ hunger: 40 })
-    await expect(feedPet()).rejects.toThrow('No treats yet')
-  })
-
-  it('rejects when the pet is full', async () => {
-    await adoptPet('cat', null)
-    await setPetFields({ treats: 1, hunger: 100, lastHungerAt: Date.now() })
-    await expect(feedPet()).rejects.toThrow('full')
-  })
-
-  it('spends a treat, restores hunger, and records the feeding', async () => {
+describe('settlement through getPet', () => {
+  it('auto-feeds the pet after a completion day and awards XP', async () => {
     await adoptPet('cat', 'Miso')
-    await saveHabit(makeHabit('a', [6]))
-    await applyCompletion({
-      id: 'completion-1',
-      habitId: 'a',
-      date: DATE_KEY,
+    await saveHabit(makeHabit('h1', [0, 1, 2, 3, 4, 5, 6]))
+    const pet = await applyCompletion({
+      id: 'c1',
+      habitId: 'h1',
+      date: TODAY_KEY,
       completedAt: Date.now(),
     })
-    await setPetFields({ hunger: 40, lastHungerAt: Date.now() })
-
-    const { pet, feeding } = await feedPet()
-    expect(pet.treats).toBe(1)
+    expect(pet.petStatus).toBe('healthy')
+    expect(pet.currentStreak).toBe(1)
     expect(pet.xp).toBe(10)
-    expect(pet.hunger).toBeCloseTo(60, 3)
-    expect(feeding.hungerBefore).toBeCloseTo(40, 3)
-    expect(feeding.hungerAfter).toBeCloseTo(60, 3)
-
-    const feedings = await listFeedings()
-    expect(feedings).toHaveLength(1)
-    expect(feedings[0].id).toBe(feeding.id)
+    expect(pet.activeDays).toBe(1)
   })
 
-  it('accounts for hunger decayed since the last update', async () => {
-    await adoptPet('cat', null)
-    await setPetFields({ treats: 1, hunger: 100, lastHungerAt: Date.now() - DAY_MS })
-
-    const { pet, feeding } = await feedPet()
-    expect(feeding.hungerBefore).toBeCloseTo(50, 2)
-    expect(pet.hunger).toBeCloseTo(70, 2)
+  it('counts one feed regardless of how many habits land on a day', async () => {
+    await adoptPet('cat', 'Miso')
+    await saveHabit(makeHabit('h1', [0, 1, 2, 3, 4, 5, 6]))
+    await saveHabit(makeHabit('h2', [0, 1, 2, 3, 4, 5, 6]))
+    const pet = await applyCompletion({
+      id: 'c1',
+      habitId: 'h1',
+      date: TODAY_KEY,
+      completedAt: Date.now(),
+    })
+    expect(pet.xp).toBe(10)
+    const pet2 = await applyCompletion({
+      id: 'c2',
+      habitId: 'h2',
+      date: TODAY_KEY,
+      completedAt: Date.now(),
+    })
+    expect(pet2.xp).toBe(20)
+    expect(pet2.currentStreak).toBe(1)
   })
 
-  it('persists pet state across reloads', async () => {
-    await adoptPet('fox', 'Rusty')
-    await setPetFields({ treats: 2, xp: 30, hunger: 50, lastHungerAt: Date.now() })
+  it('burns a cookie when a backfilled day created a veritable miss', async () => {
+    await adoptPet('cat', 'Miso')
+    await setPetFields({ cookies: 1 })
+    await saveHabit(makeHabit('h1', [0, 1, 2, 3, 4, 5, 6]))
+    const pet = await applyCompletion({
+      id: 'c1',
+      habitId: 'h1',
+      date: addDaysToKey(TODAY_KEY, -2),
+      completedAt: Date.now(),
+    })
+    expect(pet.cookieSpendDates).toEqual([YESTERDAY_KEY])
+    expect(pet.cookies).toBe(0)
+    expect(pet.activeDays).toBe(1)
+    expect(pet.petStatus).toBe('hungry')
+  })
 
-    await feedPet()
+  it('reverts remove the XP and the completion only', async () => {
+    await adoptPet('cat', 'Miso')
+    await saveHabit(makeHabit('h1', [0, 1, 2, 3, 4, 5, 6]))
+    await applyCompletion({
+      id: 'c1',
+      habitId: 'h1',
+      date: TODAY_KEY,
+      completedAt: Date.now(),
+    })
+    const pet = await revertCompletion('h1', TODAY_KEY)
+    expect(pet.xp).toBe(0)
+    expect(pet.activeDays).toBe(0)
+    expect(pet.petStatus).toBe('hungry')
+  })
+
+  it('survives reopening the database between operations', async () => {
+    await adoptPet('cat', 'Miso')
+    await saveHabit(makeHabit('h1', [0, 1, 2, 3, 4, 5, 6]))
+    await applyCompletion({
+      id: 'c1',
+      habitId: 'h1',
+      date: TODAY_KEY,
+      completedAt: Date.now(),
+    })
     await closeDatabase()
-
+    await setPetFields({})
     const pet = await getPet()
-    expect(pet.species).toBe('fox')
-    expect(pet.name).toBe('Rusty')
-    expect(pet.treats).toBe(1)
-    expect(pet.xp).toBe(40)
-    expect(await listFeedings()).toHaveLength(1)
-    expect(await listCompletions()).toHaveLength(0)
-  })
-
-  it('lets hunger keep decaying over time', async () => {
-    await adoptPet('cat', null)
-    await setPetFields({ treats: 1, hunger: 50, lastHungerAt: Date.now() })
-    const { pet } = await feedPet()
-    expect(pet.hunger).toBeCloseTo(70, 4)
-    expect(hungerAt(pet.hunger, pet.lastHungerAt, pet.lastHungerAt + DAY_MS)).toBeCloseTo(20, 4)
+    expect(pet.currentStreak).toBe(1)
   })
 })

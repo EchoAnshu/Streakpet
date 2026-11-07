@@ -1,13 +1,7 @@
-import type { Completion, Habit, Pet } from '../types/models'
+import type { Completion, Pet } from '../types/models'
 import { openDatabase, requestToPromise, transactionDone } from './db'
-import { parseDateKey } from '../domain/dates'
-import { isScheduledForDate } from '../domain/habits'
-import {
-  FULL_DAY_BONUS_TREATS,
-  TREATS_PER_COMPLETION,
-  createDefaultPet,
-  hungerAt,
-} from '../domain/pet'
+import { settleAfterCompletionChange } from './petRepository'
+import { XP_PER_COMPLETION } from '../domain/pet'
 
 export async function listCompletions(): Promise<Completion[]> {
   const db = await openDatabase()
@@ -20,73 +14,33 @@ export async function listCompletions(): Promise<Completion[]> {
   return completions
 }
 
-async function scheduledHabitIdsFor(store: IDBObjectStore, date: Date): Promise<string[]> {
-  const habits = await requestToPromise(store.getAll() as IDBRequest<Habit[]>)
-  return habits
-    .filter((habit) => !habit.archived && isScheduledForDate(habit, date))
-    .map((habit) => habit.id)
-}
-
-async function completedHabitIdsFor(store: IDBObjectStore, dateKey: string): Promise<string[]> {
-  const completions = await requestToPromise(
-    store.index('date').getAll(dateKey) as IDBRequest<Completion[]>
-  )
-  return completions.map((completion) => completion.habitId)
-}
-
-function fullDayReached(scheduledIds: string[], completedIds: string[]): boolean {
-  if (scheduledIds.length === 0) return false
-  const completed = new Set(completedIds)
-  return scheduledIds.every((habitId) => completed.has(habitId))
-}
-
-async function loadOrCreatePet(store: IDBObjectStore, now: number): Promise<Pet> {
-  const existing = await requestToPromise(store.get('pet') as IDBRequest<Pet | undefined>)
-  return existing ?? createDefaultPet(now)
-}
-
-function refreshedPet(pet: Pet, treatsDelta: number, now: number): Pet {
-  return {
-    ...pet,
-    treats: Math.max(0, pet.treats + treatsDelta),
-    hunger: hungerAt(pet.hunger, pet.lastHungerAt, now),
-    lastHungerAt: now,
-  }
+function withXpDelta(pet: Pet, delta: number): Pet {
+  return { ...pet, xp: Math.max(0, pet.xp + delta * XP_PER_COMPLETION) }
 }
 
 export async function applyCompletion(completion: Completion): Promise<Pet> {
   const db = await openDatabase()
-  const transaction = db.transaction(['completions', 'habits', 'pet'], 'readwrite')
+  const transaction = db.transaction(['completions', 'pet'], 'readwrite')
   const completionsStore = transaction.objectStore('completions')
-  const habitsStore = transaction.objectStore('habits')
   const petStore = transaction.objectStore('pet')
   const now = Date.now()
 
   await requestToPromise(completionsStore.add(completion))
-
-  const date = parseDateKey(completion.date)
-  const scheduledIds = await scheduledHabitIdsFor(habitsStore, date)
-  const completedIds = await completedHabitIdsFor(completionsStore, completion.date)
-  const bonus = fullDayReached(scheduledIds, completedIds) ? FULL_DAY_BONUS_TREATS : 0
-
-  const pet = await loadOrCreatePet(petStore, now)
-  const updated = refreshedPet(pet, TREATS_PER_COMPLETION + bonus, now)
-
-  await Promise.all([requestToPromise(petStore.put(updated)), transactionDone(transaction)])
-  return updated
+  const raw = await requestToPromise(petStore.get('pet') as IDBRequest<Pet | undefined>)
+  if (raw) {
+    const pet = withXpDelta(raw, 1)
+    await requestToPromise(petStore.put(pet))
+  }
+  await transactionDone(transaction)
+  return settleAfterCompletionChange()
 }
 
 export async function revertCompletion(habitId: string, dateKey: string): Promise<Pet> {
   const db = await openDatabase()
-  const transaction = db.transaction(['completions', 'habits', 'pet'], 'readwrite')
+  const transaction = db.transaction(['completions', 'pet'], 'readwrite')
   const completionsStore = transaction.objectStore('completions')
-  const habitsStore = transaction.objectStore('habits')
   const petStore = transaction.objectStore('pet')
   const now = Date.now()
-
-  const date = parseDateKey(dateKey)
-  const scheduledIds = await scheduledHabitIdsFor(habitsStore, date)
-  const completedBefore = await completedHabitIdsFor(completionsStore, dateKey)
 
   const existing = await requestToPromise(
     completionsStore.index('habitId_date').get([habitId, dateKey]) as IDBRequest<
@@ -94,22 +48,17 @@ export async function revertCompletion(habitId: string, dateKey: string): Promis
     >
   )
 
-  let treatsDelta = 0
+  let xpDelta = 0
   if (existing) {
     await requestToPromise(completionsStore.delete(existing.id))
-    treatsDelta -= TREATS_PER_COMPLETION
+    xpDelta -= 1
   }
 
-  const completedAfter = completedBefore.filter((id) => id !== habitId)
-  const wasFull = fullDayReached(scheduledIds, completedBefore)
-  const isFull = fullDayReached(scheduledIds, completedAfter)
-  if (wasFull && !isFull) {
-    treatsDelta -= FULL_DAY_BONUS_TREATS
+  const raw = await requestToPromise(petStore.get('pet') as IDBRequest<Pet | undefined>)
+  if (raw) {
+    const pet = withXpDelta(raw, xpDelta)
+    await requestToPromise(petStore.put(pet))
   }
-
-  const pet = await loadOrCreatePet(petStore, now)
-  const updated = refreshedPet(pet, treatsDelta, now)
-
-  await Promise.all([requestToPromise(petStore.put(updated)), transactionDone(transaction)])
-  return updated
+  await transactionDone(transaction)
+  return settleAfterCompletionChange()
 }
